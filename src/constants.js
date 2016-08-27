@@ -25,18 +25,18 @@ module.exports = {
   conf: {
     type: path,
     description: 'Path of the config file to use in datadir. A relative path is evaluated as relative to datadir.',
-    default: 'bitcoin.conf'
+    defaultValue: 'bitcoin.conf'
   },
   datadir: {
     type: path,
     description: 'Path to the bitcoin data directory. A relative path is evaluated as relative to the current working directory',
-    default: defaultDataDirMap[platform()] || '~/.bitcoin'
+    defaultValue: defaultDataDirMap[platform()] || '~/.bitcoin'
   },
   options: {
     port: {
       type: integer,
-      description: 'Listen for connections on this port (default: 8333 or testnet: 18333)',
-      default: ({testnet}) => testnet ? 18333 : 8333
+      description: 'Listen for connections on this port (defaultValue: 8333 or testnet: 18333)',
+      defaultValue: ({ testnet }) => testnet ? 18333 : 8333
     },
     rpcauth: {
       type: string,
@@ -45,12 +45,12 @@ module.exports = {
     rpcport: {
       type: integer,
       description: 'Port of the JSON-RPC interface. Default is 8332 or 18332 for testnet',
-      default: ({testnet}) => testnet ? 18332 : 8332
+      defaultValue: ({ testnet }) => testnet ? 18332 : 8332
     },
     rpccookiefile: {
       type: path,
       description: 'Path to the RPC cookie file. A relative path is evaluated as relative to datadir',
-      default: '.cookie'
+      defaultValue: '.cookie'
     },
     rpcpassword: {
       type: string,

@@ -1,25 +1,15 @@
 'use strict';
 
-const path = require('path');
+const { isAbsolute, resolve: pathResolve } = require('path');
 
-const util = require('@carnesen/util');
 const expandHomeDir = require('expand-home-dir');
+const { firstDefined, isDefined, isFunction } = require('@carnesen/util');
 
 const { options, types } = require('./constants');
 
 module.exports = function resolve(...args) {
 
-
-  // const defaults = {};
-  // const defaultFunctions = {};
-  // Object.keys(options).forEach(name => {
-  //   const defaultValue = options[name].default;
-  //   if (defaultValue) {
-  //     if (util.isFunction(defaultValue)) {
-  //       defaultFunctions
-  //     }
-  //   }
-  // });
+  // Each arg is an object containing configuration properties with left-most taking priority
 
   const passed = [...args].reduceRight((reduction, arg) => Object.assign(reduction, arg), {});
 
@@ -27,9 +17,9 @@ module.exports = function resolve(...args) {
 
   // First process options whose default value is not a function
   Object.keys(options).forEach(name => {
-    const defaultValue = options[name].default;
-    if (!util.isFunction(defaultValue)) {
-      const value = util.firstDefined(passed[name], defaultValue);
+    const defaultValue = options[name].defaultValue;
+    if (!isFunction(defaultValue)) {
+      const value = firstDefined(passed[name], defaultValue);
       if (isDefined(value)) {
         result[name] = value;
       }
@@ -38,9 +28,9 @@ module.exports = function resolve(...args) {
 
   // Now process options whose default value is a function
   Object.keys(options).forEach(name => {
-    const defaultValueFunction = options[name].default;
-    if (util.isFunction(defaultValueFunction)) {
-      const value = util.firstDefined(passed[name], defaultValueFunction(result));
+    const defaultValueFunction = options[name].defaultValue;
+    if (isFunction(defaultValueFunction)) {
+      const value = firstDefined(passed[name], defaultValueFunction(result));
       if (isDefined(value)) {
         result[name] = value;
       }
@@ -53,20 +43,9 @@ module.exports = function resolve(...args) {
       result[name] = expandHomeDir(result[name]);
     }
     if (!isAbsolute(result[name])) {
-      result[name] = resolve(result.datadir, result.rpccookiefile);
+      result[name] = pathResolve(result.datadir, result[name]);
     }
   });
-
-  result.rpccookiefile = expandHomeDir(passed.rpccookiefile || config.rpccookiefile || defaults.rpccookiefile);
-  if (!isAbsolute(result.rpccookiefile)) {
-    result.rpccookiefile = resolve(result.datadir, result.rpccookiefile);
-  }
-
-  result.testnet = passed.testnet || config.testnet;
-  result.rpcport = passed.rpcport || config.rpcport || defaults.rpcport(result.testnet);
-  result.rpcauth = passed.rpcauth || config.rpcauth;
-  result.rpcuser = passed.rpcuser || config.rpcuser;
-  result.rpcpassword = passed.rpcpassword || config.rpcpassword;
 
   return result;
 

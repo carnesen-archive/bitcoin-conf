@@ -36,7 +36,7 @@ module.exports = {
     port: {
       type: integer,
       description: 'Listen for connections on this port (defaultValue: 8333 or testnet: 18333)',
-      defaultValue: ({testnet}) => testnet ? 18333 : 8333
+      defaultValue: ({ testnet }) => testnet ? 18333 : 8333
     },
     rpcauth: {
       type: string,
@@ -45,7 +45,7 @@ module.exports = {
     rpcport: {
       type: integer,
       description: 'Port of the JSON-RPC interface. Default is 8332 or 18332 for testnet',
-      defaultValue: ({testnet}) => testnet ? 18332 : 8332
+      defaultValue: ({ testnet }) => testnet ? 18332 : 8332
     },
     rpccookiefile: {
       type: path,

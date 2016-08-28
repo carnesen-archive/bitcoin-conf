@@ -5,7 +5,7 @@ const { platform } = require('os');
 
 const defaultDataDirMap = {
   darwin: '~/Library/Application Support/Bitcoin/',
-  win32: resolve(process.env.APPDATA, 'Bitcoin')
+  win32: resolve(process.env.APPDATA || '', 'Bitcoin')
 };
 
 const flag = 'flag';

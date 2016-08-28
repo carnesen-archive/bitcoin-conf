@@ -10,6 +10,7 @@ module.exports = function* readConfFile(passed) {
   const { conf } = resolveConfPath(passed);
 
   const contents = yield readFile(conf, 'utf8');
+
   return ini.parse(contents);
 
 };

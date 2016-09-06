@@ -6,6 +6,8 @@ const ini = require('ini');
 const fs = require('@carnesen/fs');
 const util = require('@carnesen/util');
 
+const log = require('./log');
+
 module.exports = function* writeFile(filePath, options) {
 
   util.throwIfNotPositiveLengthString(filePath, 'filePath');
@@ -16,6 +18,8 @@ module.exports = function* writeFile(filePath, options) {
 
   yield fs.writeFile(filePath, contents);
 
-  return contents;
+  log.info(`Wrote ${ filePath }`);
+
+  return options;
 
 };

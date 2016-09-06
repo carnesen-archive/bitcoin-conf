@@ -2,8 +2,7 @@
 
 module.exports = {
   constants: require('./constants'),
+  log: require('./log'),
   readFile: require('./readFile'),
-  resolveConf: require('./resolveConf'),
-  resolveOptions: require('./resolveOptions'),
   writeFile: require('./writeFile')
 };

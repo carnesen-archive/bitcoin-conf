@@ -5,7 +5,7 @@ const { isAbsolute, resolve: pathResolve } = require('path');
 const expandHomeDir = require('expand-home-dir');
 const { firstDefined, isDefined, isFunction } = require('@carnesen/util');
 
-const { options, types } = require('./constants');
+const { options, types } = require('./../src/constants');
 
 module.exports = function resolve(...args) {
 

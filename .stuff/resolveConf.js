@@ -4,7 +4,7 @@ const path = require('path');
 
 const expandHomeDir = require('expand-home-dir');
 
-const C = require('./constants');
+const C = require('./../src/constants');
 
 module.exports = function resolveConf(passed) {
 

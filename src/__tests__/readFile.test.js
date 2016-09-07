@@ -12,7 +12,7 @@ describe('readFile', function () {
       yield readFile();
       throw 'unexpected';
     } catch (ex) {
-      ex.message.should.match(/^Expected/)
+      ex.message.should.match(/^Expected/);
     }
   }));
 

@@ -6,7 +6,7 @@ const constants = require('../constants');
 describe('tests', function () {
 
   function testOption(name, value) {
-    it('Option "' + name + '" has a type and a description', function () {
+    it(`Option "${ name }" has a type and a description`, function () {
       value.type.should.be.a('string');
       value.description.should.be.a('string');
     });

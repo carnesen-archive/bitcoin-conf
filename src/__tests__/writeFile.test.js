@@ -21,7 +21,7 @@ describe('writeFile', function () {
     const filePath = resolve(tmpDir, 'bitcoin.conf');
     yield writeFile(filePath, { foo: 'bar' });
     const contents = yield fs.readFile(filePath, { encoding: 'utf8' });
-    contents.should.eql('foo=bar\n');
+    contents.should.match(/foo=bar\r?\n/);
   }));
 
 });

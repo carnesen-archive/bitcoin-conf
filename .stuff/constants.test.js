@@ -1,7 +1,7 @@
 
 require('chai').should();
 
-const constants = require('../constants');
+const constants = require('../src/constants');
 
 describe('tests', function () {
 

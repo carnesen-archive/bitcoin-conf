@@ -3,7 +3,7 @@ const { resolve } = require('path');
 
 const expandHomeDir = require('expand-home-dir');
 
-const resolveConf = require('../../.stuff/resolveConf');
+const resolveConf = require('resolveConf');
 
 describe('resolveConf', function () {
 

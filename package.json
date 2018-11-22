@@ -1,8 +1,38 @@
 {
   "name": "@carnesen/bitcoin-conf",
   "description": "Options, defaults, and other constants related to the Bitcoin Core software",
-  "version": "0.0.1",
+  "version": "0.0.2-0",
   "main": "src/index.js",
+  "scripts": {
+    "build": "npm run clean && tsc",
+    "check": "tslint --project .",
+    "clean": "rimraf lib",
+    "fix": "npm run check -- --fix",
+    "test": "npm run check && npm run unit-test && npm run build",
+    "unit-test": "jest",
+    "watch": "npm run build -- --watch",
+    "preversion": "npm test",
+    "postversion": "npm publish"
+  },
+  "dependencies": {
+    "@types/expand-tilde": "2.0.0",
+    "@types/ini": "1.3.29",
+    "expand-tilde": "2.0.2",
+    "ini": "1.3.5"
+  },
+  "devDependencies": {
+    "@carnesen/tsconfig": "0.0.1",
+    "@carnesen/tslint-config": "0.0.2",
+    "@types/jest": "23.3.9",
+    "@types/node": "10.12.9",
+    "jest": "23.6.0",
+    "rimraf": "2.6.2",
+    "ts-jest": "23.10.4",
+    "ts-node": "7.0.1",
+    "tslint": "5.11.0",
+    "typescript": "3.1.6"
+  },
+  "license": "MIT",
   "author": {
     "name": "Chris Arnesen",
     "email": "chris.arnesen@gmail.com"
@@ -12,28 +42,7 @@
     "url": "https://github.com/carnesen/bitcoin-conf.git"
   },
   "bugs": {
-    "url": "https://github.com/carnesen/bitcoin-constants/issues"
+    "url": "https://github.com/carnesen/bitcoin-conf/issues"
   },
-  "homepage": "https://github.com/carnesen/bitcoin-constants",
-  "license": "MIT",
-  "scripts": {
-    "lint": "eslint src --config carnesen",
-    "lint:fix": "npm run lint -- --fix",
-    "test": "npm run lint && npm run test:unit",
-    "test:unit": "cross-env NODE_ENV=test mocha src/**/__tests__/**/*.test.js"
-  },
-  "dependencies": {
-    "@carnesen/fs": "0.0.1",
-    "@carnesen/util": "0.0.2",
-    "expand-home-dir": "0.0.3",
-    "ini": "1.3.4"
-  },
-  "devDependencies": {
-    "chai": "3.5.0",
-    "co": "4.6.0",
-    "cross-env": "2.0.1",
-    "eslint": "3.5.0",
-    "eslint-config-carnesen": "1.0.3",
-    "mocha": "3.0.2"
-  }
+  "homepage": "https://github.com/carnesen/bitcoin-conf"
 }

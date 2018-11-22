@@ -1,10 +1,2 @@
----
-
-os:
-  - linux
-  - osx
-
 language: node_js
-
-node_js:
-  - 6
+# Version specified in .nvmrc

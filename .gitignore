@@ -96,9 +96,6 @@ $RECYCLE.BIN/
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent### Node ###
 
-# TODO: Remove this when dependencies have stabilized
-package-lock.json*
-
 # Logs
 logs
 npm-debug.log*

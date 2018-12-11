@@ -16,11 +16,14 @@ describe('defaultConfFilePath', () => {
 });
 
 const expectedBitcoinConf: BitcoinConf = {
-  rpcauth: ['foo:edbb8eb$fae09e4', 'bar:b40474b$79f29e9'],
-  rpcuser: 'chris',
-  rpcpassword: '12345678',
-  regtest: '1',
-  foo: 'bar',
+  top: {
+    rpcuser: 'chris',
+    rpcpassword: '12345678',
+    regtest: '1',
+    rpcauth: ['foo:edbb8eb$fae09e4', 'bar:b40474b$79f29e9'],
+    rpcport: '55555',
+  },
+  regtest: { rpcport: '44444' },
 };
 
 describe('readConfFileSync', () => {

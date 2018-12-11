@@ -52,26 +52,27 @@ type TsType<R extends keyof typeof RUNTIME_TYPES> = R extends typeof STRING
   ? string
   : R extends typeof FLAG ? boolean : any;
 
-type BC = { [K in keyof typeof BITCOIN_CONF]: TsType<(typeof BITCOIN_CONF)[K]> };
+type BC = Partial<{ [K in keyof typeof BITCOIN_CONF]: TsType<(typeof BITCOIN_CONF)[K]> }>;
 
-interface All extends BC {
+interface ABC extends BC {
   [x: string]: any;
 }
 
-const a: All = {
-  regtest: '1',
+type ABC2 = BC & {
+  [x: string]: any;
 };
 
-type Foo = {
-  regtest: string;
-  [x: string]: string | string[] | undefined;
-};
+type Parsed = Partial<Record<keyof BitcoinConf, ABC2>>;
 
 const parseConf = (fileContents: string) => {
   const bitcoinConf: BitcoinConf = {
     top: {},
   };
+  const parsed: Parsed = {
+    top: {},
+  };
   let section = bitcoinConf.top!;
+  const section2 = parsed.top!;
 
   fileContents.split('\n').forEach((line, index) => {
     try {
@@ -116,6 +117,7 @@ const parseConf = (fileContents: string) => {
       }
       const value = trimmedLine.slice(separatorIndex + 1).trim();
       const existingValue = section[key];
+      const existingValue2 = section2[key];
       if (typeof existingValue === 'string') {
         section[key] = [existingValue, value];
       } else if (Array.isArray(existingValue)) {

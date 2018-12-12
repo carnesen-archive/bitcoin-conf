@@ -36,39 +36,59 @@ const RT_TYPE = {
 };
 
 type RtType = keyof typeof RT_TYPE;
-
-const KNOWN_CONF = {
-  regtest: RT_TYPE[BOOLEAN],
-  rpcauth: RT_TYPE[STRING_ARRAY],
-  rpcpassword: RT_TYPE[STRING],
-  rpcport: RT_TYPE[NUMBER],
-  rpcuser: RT_TYPE[STRING],
-  testnet: RT_TYPE[BOOLEAN],
-};
-
 type TsType<R extends RtType> = R extends typeof STRING
   ? string
   : R extends typeof BOOLEAN
     ? boolean
     : R extends typeof NUMBER ? number : R extends typeof STRING_ARRAY ? string[] : never;
 
-type KnownConf = { [K in keyof typeof KNOWN_CONF]: TsType<(typeof KNOWN_CONF)[K]> };
-
-type OtherConf = {
-  [x: string]: string[];
+const SPECIAL_OPTIONS = {
+  addnode: RT_TYPE[STRING_ARRAY],
+  bind: RT_TYPE[STRING],
+  connect: RT_TYPE[STRING_ARRAY],
+  rpcbind: RT_TYPE[STRING],
+  rpcport: RT_TYPE[NUMBER],
+  port: RT_TYPE[NUMBER],
+  wallet: RT_TYPE[STRING_ARRAY],
 };
 
-type SectionConf = Partial<
-  KnownConf & {
-    other: OtherConf;
+const NETWORK_SECTION_OPTIONS = {
+  ...SPECIAL_OPTIONS,
+  rpcauth: RT_TYPE[STRING_ARRAY],
+  rpcpassword: RT_TYPE[STRING],
+  rpcuser: RT_TYPE[STRING],
+};
+type NetworkSectionOptions = TsOptions<typeof NETWORK_SECTION_OPTIONS>;
+
+const TOP_SECTION_OPTIONS = {
+  regtest: RT_TYPE[BOOLEAN],
+  testnet: RT_TYPE[BOOLEAN],
+  ...NETWORK_SECTION_OPTIONS,
+};
+type TopSectionOptions = TsOptions<typeof TOP_SECTION_OPTIONS>;
+
+type TsOptions<
+  T extends {
+    [x: string]: RtType;
   }
->;
+> = { [K in keyof T]: TsType<T[K]> };
 
-export type BitcoinConf = Partial<{
-  [sectionName: string]: SectionConf;
-}>;
+type OtherOptions = {
+  other: {
+    [x: string]: string[];
+  };
+};
 
-// function cast(value: string, runtimeType: typeof STRING): TsType<typeof STRING>;
+type TopSection = Partial<TopSectionOptions & OtherOptions>;
+type NetworkSection = Partial<NetworkSectionOptions & OtherOptions>;
+
+export interface BitcoinConf {
+  top: TopSection;
+  main?: NetworkSection;
+  test?: NetworkSection;
+  regtest?: NetworkSection;
+}
+
 function cast(value: string, rtType: RtType) {
   switch (rtType) {
     case BOOLEAN:
@@ -84,12 +104,11 @@ function cast(value: string, rtType: RtType) {
   }
 }
 
-const parseConf = (fileContents: string) => {
-  let sectionConf: SectionConf = {};
+const parse = (fileContents: string) => {
   const bitcoinConf: BitcoinConf = {
-    top: sectionConf,
+    top: {},
   };
-
+  let sectionName: keyof BitcoinConf = 'top';
   fileContents.split('\n').forEach((originalLine, index) => {
     try {
       let line = originalLine;
@@ -103,22 +122,24 @@ const parseConf = (fileContents: string) => {
       // Trim whitespace
       line = line.trim();
 
-      // Empty line
       if (line.length === 0) {
         return;
       }
 
       // Section https://bitcoincore.org/en/releases/0.17.0/#configuration-sections-for-testnet-and-regtest
       if (line.startsWith('[') && line.endsWith(']')) {
-        const sectionName = line.slice(1, -1);
-        const existingSection = bitcoinConf[sectionName];
-        if (existingSection) {
-          sectionConf = existingSection;
-        } else {
-          sectionConf = {};
-          bitcoinConf[sectionName] = sectionConf;
+        const rawSectionName = line.slice(1, -1);
+        switch (rawSectionName) {
+          case 'top':
+            throw new Error('Section name "top" is reserved');
+          case 'main':
+          case 'test':
+          case 'regtest':
+            sectionName = rawSectionName;
+            return;
+          default:
+            throw new Error(`Unknown section name "${rawSectionName}`);
         }
-        return;
       }
 
       // Key = Value
@@ -131,26 +152,26 @@ const parseConf = (fileContents: string) => {
         throw new Error('Zero-length key');
       }
       const rawValue = line.slice(indexOfEqualsSign + 1).trim();
-      const rtType: RtType | undefined = (KNOWN_CONF as any)[key];
+      const rtType: RtType | undefined = (NETWORK_SECTION_OPTIONS as any)[key];
       if (typeof rtType === 'undefined') {
-        if (sectionConf.other) {
-          const existingValue = sectionConf.other[key];
+        if (section.other) {
+          const existingValue = section.other[key];
           if (existingValue) {
             existingValue.push(rawValue);
           } else {
-            sectionConf.other[key] = [rawValue];
+            section.other[key] = [rawValue];
           }
         } else {
-          sectionConf.other = {
+          section.other = {
             [key]: [rawValue],
           };
         }
       } else {
         // Known config value
         const rtValue = cast(rawValue, rtType);
-        const existingRtValue = (sectionConf as any)[key];
+        const existingRtValue = (section as any)[key];
         if (typeof existingRtValue === 'undefined') {
-          (sectionConf as any)[key] = rtValue;
+          (section as any)[key] = rtValue;
         } else {
           if (rtType.endsWith('ARRAY')) {
             existingRtValue.push(...(rtValue as any[]));
@@ -171,5 +192,9 @@ export const readConfFileSync = (filePath = getDefaultConfFilePath()) => {
     throw new Error(`File path must be absolute`);
   }
   const fileContents = readFileSync(filePath, { encoding: 'utf8' });
-  return parseConf(fileContents);
+  return parse(fileContents);
+};
+
+export const extractCurrentNetworkConf = (bitcoinConf: BitcoinConf) => {
+  const topSection = bitcoinConf[TOP_SECTION_NAME];
 };

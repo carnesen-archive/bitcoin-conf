@@ -1,17 +1,22 @@
-import { defaultDataDir, readConfFileSync, BitcoinConf, defaultConfFilePath } from '..';
+import {
+  getDefaultDataDir,
+  readConfFileSync,
+  getDefaultConfFilePath,
+  BitcoinConf,
+} from '..';
 import { join, isAbsolute, dirname } from 'path';
 import { writeFileSync } from 'fs';
 import mkdirp = require('mkdirp');
 
 describe('defaultDataDir', () => {
   it('should be an absolute path', () => {
-    expect(isAbsolute(defaultDataDir)).toBe(true);
+    expect(isAbsolute(getDefaultDataDir())).toBe(true);
   });
 });
 
 describe('defaultConfFilePath', () => {
   it('should be "bitcoin.conf" in the default data directory', () => {
-    expect(defaultConfFilePath).toBe(join(defaultDataDir, 'bitcoin.conf'));
+    expect(getDefaultConfFilePath()).toBe(join(getDefaultDataDir(), 'bitcoin.conf'));
   });
 });
 
@@ -19,11 +24,16 @@ const expectedBitcoinConf: BitcoinConf = {
   top: {
     rpcuser: 'chris',
     rpcpassword: '12345678',
-    regtest: '1',
+    regtest: true,
     rpcauth: ['foo:edbb8eb$fae09e4', 'bar:b40474b$79f29e9'],
-    rpcport: '55555',
+    rpcport: 55555,
   },
-  regtest: { rpcport: '44444' },
+  regtest: {
+    rpcport: 44444,
+    other: {
+      foo: ['bar'],
+    },
+  },
 };
 
 describe('readConfFileSync', () => {
@@ -33,16 +43,16 @@ describe('readConfFileSync', () => {
   });
 
   it('reads defaultConfFilePath if filePath is not provided', () => {
-    mkdirp.sync(dirname(defaultConfFilePath));
+    mkdirp.sync(dirname(getDefaultConfFilePath()));
     try {
-      writeFileSync(defaultConfFilePath, '', { flag: 'wx' });
+      writeFileSync(getDefaultConfFilePath(), '', { flag: 'wx' });
     } catch (ex) {
       if (ex.code !== 'EEXIST') {
         throw ex;
       }
     }
     const bitcoinConf0 = readConfFileSync();
-    const bitcoinConf1 = readConfFileSync(defaultConfFilePath);
+    const bitcoinConf1 = readConfFileSync(getDefaultConfFilePath());
     expect(bitcoinConf0).toEqual(bitcoinConf1);
   });
 

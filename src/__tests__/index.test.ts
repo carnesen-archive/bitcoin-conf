@@ -4,17 +4,15 @@ import {
   getDefaultConfFilePath,
   BitcoinConf,
 } from '..';
-import { join, isAbsolute, dirname } from 'path';
-import { writeFileSync } from 'fs';
-import mkdirp = require('mkdirp');
+import { join, isAbsolute } from 'path';
 
-describe('defaultDataDir', () => {
+describe('getDefaultDataDir', () => {
   it('should be an absolute path', () => {
     expect(isAbsolute(getDefaultDataDir())).toBe(true);
   });
 });
 
-describe('defaultConfFilePath', () => {
+describe('getDefaultConfFilePath', () => {
   it('should be "bitcoin.conf" in the default data directory', () => {
     expect(getDefaultConfFilePath()).toBe(join(getDefaultDataDir(), 'bitcoin.conf'));
   });
@@ -34,26 +32,13 @@ const expectedBitcoinConf: BitcoinConf = {
       foo: ['bar'],
     },
   },
+  test: {},
 };
 
 describe('readConfFileSync', () => {
   it('reads the specified file if provided and existent', () => {
     const bitcoinConf = readConfFileSync(join(__dirname, 'bitcoin.conf'));
     expect(bitcoinConf).toEqual(expectedBitcoinConf);
-  });
-
-  it('reads defaultConfFilePath if filePath is not provided', () => {
-    mkdirp.sync(dirname(getDefaultConfFilePath()));
-    try {
-      writeFileSync(getDefaultConfFilePath(), '', { flag: 'wx' });
-    } catch (ex) {
-      if (ex.code !== 'EEXIST') {
-        throw ex;
-      }
-    }
-    const bitcoinConf0 = readConfFileSync();
-    const bitcoinConf1 = readConfFileSync(getDefaultConfFilePath());
-    expect(bitcoinConf0).toEqual(bitcoinConf1);
   });
 
   it('throws if a non-absolute path is provided', () => {

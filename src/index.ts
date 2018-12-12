@@ -126,7 +126,7 @@ const parse = (fileContents: string) => {
         return;
       }
 
-      // Section https://bitcoincore.org/en/releases/0.17.0/#configuration-sections-for-testnet-and-regtest
+      // [section name] https://bitcoincore.org/en/releases/0.17.0/#configuration-sections-for-testnet-and-regtest
       if (line.startsWith('[') && line.endsWith(']')) {
         const rawSectionName = line.slice(1, -1);
         switch (rawSectionName) {
@@ -136,42 +136,48 @@ const parse = (fileContents: string) => {
           case 'test':
           case 'regtest':
             sectionName = rawSectionName;
+            if (typeof bitcoinConf[sectionName] === 'undefined') {
+              bitcoinConf[sectionName] = {};
+            }
             return;
           default:
-            throw new Error(`Unknown section name "${rawSectionName}`);
+            throw new Error('Section name must be "main", "test", or "regtest"');
         }
       }
 
-      // Key = Value
+      // name = value
       const indexOfEqualsSign = line.indexOf('=');
       if (indexOfEqualsSign === -1) {
-        throw new Error('Expected "key = value"');
+        throw new Error('Expected "name = value"');
       }
-      const key = line.slice(0, indexOfEqualsSign).trim();
-      if (key.length === 0) {
-        throw new Error('Zero-length key');
+      const rawName = line.slice(0, indexOfEqualsSign).trim();
+      if (rawName.length === 0) {
+        throw new Error('Empty option name');
       }
       const rawValue = line.slice(indexOfEqualsSign + 1).trim();
-      const rtType: RtType | undefined = (NETWORK_SECTION_OPTIONS as any)[key];
+      const options: any =
+        sectionName === 'top' ? TOP_SECTION_OPTIONS : NETWORK_SECTION_OPTIONS;
+      const section = bitcoinConf[sectionName]!;
+      const rtType: RtType | undefined = options[rawName];
       if (typeof rtType === 'undefined') {
         if (section.other) {
-          const existingValue = section.other[key];
+          const existingValue = section.other[rawName];
           if (existingValue) {
             existingValue.push(rawValue);
           } else {
-            section.other[key] = [rawValue];
+            section.other[rawName] = [rawValue];
           }
         } else {
           section.other = {
-            [key]: [rawValue],
+            [rawName]: [rawValue],
           };
         }
       } else {
         // Known config value
         const rtValue = cast(rawValue, rtType);
-        const existingRtValue = (section as any)[key];
+        const existingRtValue = (section as any)[rawName];
         if (typeof existingRtValue === 'undefined') {
-          (section as any)[key] = rtValue;
+          (section as any)[rawName] = rtValue;
         } else {
           if (rtType.endsWith('ARRAY')) {
             existingRtValue.push(...(rtValue as any[]));
@@ -195,6 +201,6 @@ export const readConfFileSync = (filePath = getDefaultConfFilePath()) => {
   return parse(fileContents);
 };
 
-export const extractCurrentNetworkConf = (bitcoinConf: BitcoinConf) => {
-  const topSection = bitcoinConf[TOP_SECTION_NAME];
-};
+// export const extractCurrentNetworkConf = (bitcoinConf: BitcoinConf) => {
+//   const topSection = bitcoinConf[TOP_SECTION_NAME];
+// };

@@ -28,88 +28,195 @@ const BOOLEAN = 'BOOLEAN';
 const STRING_ARRAY = 'STRING_ARRAY';
 const NUMBER = 'NUMBER';
 
-const RT_TYPE = {
+const R_TYPE = {
   [STRING]: STRING as typeof STRING,
   [BOOLEAN]: BOOLEAN as typeof BOOLEAN,
   [STRING_ARRAY]: STRING_ARRAY as typeof STRING_ARRAY,
   [NUMBER]: NUMBER as typeof NUMBER,
 };
 
-type RtType = keyof typeof RT_TYPE;
-type TsType<R extends RtType> = R extends typeof STRING
+type RType = keyof typeof R_TYPE;
+type RValue<R extends RType> = R extends typeof STRING
   ? string
   : R extends typeof BOOLEAN
     ? boolean
     : R extends typeof NUMBER ? number : R extends typeof STRING_ARRAY ? string[] : never;
 
-const SPECIAL_OPTIONS = {
-  addnode: RT_TYPE[STRING_ARRAY],
-  bind: RT_TYPE[STRING],
-  connect: RT_TYPE[STRING_ARRAY],
-  rpcbind: RT_TYPE[STRING],
-  rpcport: RT_TYPE[NUMBER],
-  port: RT_TYPE[NUMBER],
-  wallet: RT_TYPE[STRING_ARRAY],
+// If the following options are in the "top" section, they only apply to the "main" net
+const MAIN_ONLY_R_TYPE_MAP = {
+  addnode: R_TYPE[STRING_ARRAY],
+  bind: R_TYPE[STRING],
+  connect: R_TYPE[STRING_ARRAY],
+  rpcbind: R_TYPE[STRING],
+  rpcport: R_TYPE[NUMBER],
+  port: R_TYPE[NUMBER],
+  wallet: R_TYPE[STRING_ARRAY],
 };
 
-const NETWORK_SECTION_OPTIONS = {
-  ...SPECIAL_OPTIONS,
-  rpcauth: RT_TYPE[STRING_ARRAY],
-  rpcpassword: RT_TYPE[STRING],
-  rpcuser: RT_TYPE[STRING],
-};
-type NetworkSectionOptions = TsOptions<typeof NETWORK_SECTION_OPTIONS>;
-
-const TOP_SECTION_OPTIONS = {
-  regtest: RT_TYPE[BOOLEAN],
-  testnet: RT_TYPE[BOOLEAN],
-  ...NETWORK_SECTION_OPTIONS,
-};
-type TopSectionOptions = TsOptions<typeof TOP_SECTION_OPTIONS>;
-
-type TsOptions<
-  T extends {
-    [x: string]: RtType;
-  }
-> = { [K in keyof T]: TsType<T[K]> };
-
-type OtherOptions = {
-  other: {
-    [x: string]: string[];
-  };
+const NETWORK_SELECTION_R_TYPE_MAP = {
+  regtest: R_TYPE[BOOLEAN],
+  testnet: R_TYPE[BOOLEAN],
 };
 
-type TopSection = Partial<TopSectionOptions & OtherOptions>;
-type NetworkSection = Partial<NetworkSectionOptions & OtherOptions>;
+const NETWORK_SECTION_R_TYPE_MAP = {
+  ...MAIN_ONLY_R_TYPE_MAP,
+  rpcauth: R_TYPE[STRING_ARRAY],
+  rpcpassword: R_TYPE[STRING],
+  rpcuser: R_TYPE[STRING],
+};
+
+const TOP_SECTION_R_TYPE_MAP = {
+  ...NETWORK_SELECTION_R_TYPE_MAP,
+  ...NETWORK_SECTION_R_TYPE_MAP,
+};
+
+type RTypeMap = {
+  [optionName: string]: RType;
+};
+
+type Section<T extends RTypeMap = RTypeMap> = Partial<{ [K in keyof T]: RValue<T[K]> }>;
+export type TopSection = Section<typeof TOP_SECTION_R_TYPE_MAP>;
+export type NetworkSection = Section<typeof NETWORK_SECTION_R_TYPE_MAP>;
 
 export interface BitcoinConf {
-  top: TopSection;
+  top?: TopSection;
   main?: NetworkSection;
   test?: NetworkSection;
   regtest?: NetworkSection;
 }
 
-function cast(value: string, rtType: RtType) {
-  switch (rtType) {
-    case BOOLEAN:
-      return value === '1';
-    case STRING:
-      return value;
-    case STRING_ARRAY:
-      return [value];
-    case NUMBER:
-      return Number(value);
-    default:
-      throw new Error(`Unknown runtime type ${rtType}`);
-  }
-}
+type NetworkName = 'main' | 'test' | 'regtest';
+const NETWORK_NAMES: NetworkName[] = ['main', 'test', 'regtest'];
 
-const parse = (fileContents: string) => {
-  const bitcoinConf: BitcoinConf = {
-    top: {},
+const castToNetworkName = (str: string) => {
+  const networkName = str as NetworkName;
+  if (!NETWORK_NAMES.includes(networkName)) {
+    throw new Error(`Expected network name to be one of ${NETWORK_NAMES}`);
+  }
+  return networkName;
+};
+
+type SectionName = 'top' | NetworkName;
+const SECTION_NAMES: SectionName[] = ['top', ...NETWORK_NAMES];
+
+const castToSectionName = (str: string) => {
+  const sectionName = str as SectionName;
+  if (!SECTION_NAMES.includes(sectionName)) {
+    throw new Error(`Expected section name to be one of ${SECTION_NAMES}`);
+  }
+  return sectionName;
+};
+
+const castToRValue = (rType: RType) => (str: string) => {
+  let rValue: RValue<typeof rType>;
+  switch (rType) {
+    case BOOLEAN:
+      rValue = str === '1';
+      break;
+    case STRING:
+      rValue = str;
+      break;
+    case STRING_ARRAY:
+      rValue = [str];
+      break;
+    case NUMBER:
+      rValue = Number(str);
+      break;
+    default:
+      throw new Error(`Unknown runtime type ${rType}`);
+  }
+  return rValue;
+};
+
+const getRType = (rTypeMap: RTypeMap) => (optionName: string) => {
+  const rType = rTypeMap[optionName];
+  if (!rType) {
+    throw new Error(`Unknown option name "${optionName}"`);
+  }
+  return rType;
+};
+
+const getNetworkSectionRType = getRType(NETWORK_SECTION_R_TYPE_MAP);
+const getTopSectionRType = getRType(TOP_SECTION_R_TYPE_MAP);
+
+const createParseLine = (sectionName: SectionName) => (line: string): BitcoinConf => {
+  const indexOfEqualsSign = line.indexOf('=');
+  if (indexOfEqualsSign === -1) {
+    throw new Error('Expected "name = value"');
+  }
+  const lhs = line.slice(0, indexOfEqualsSign).trim();
+  if (lhs.length === 0) {
+    throw new Error('Empty option name');
+  }
+  const rhs = line.slice(indexOfEqualsSign + 1).trim();
+  if (sectionName === 'top') {
+    const indexOfDot = lhs.indexOf('.');
+    if (indexOfDot > -1) {
+      // sectionName === 'top' && indexOfDot > -1
+      const networkName = castToNetworkName(lhs.slice(0, indexOfDot));
+      const optionName = lhs.slice(indexOfDot + 1);
+      const rType = getNetworkSectionRType(optionName);
+      return {
+        // [networkName]: { [optionName]: castToRValue(rType)(rhs) },
+        [networkName]: castToRValue(rType)(rhs),
+      };
+    }
+    // sectionName === 'top' && indexOfDot === -1
+    const optionName = lhs;
+    const rType = getTopSectionRType(lhs);
+    return {
+      [sectionName]: { [optionName]: castToRValue(rType)(rhs) },
+    };
+  }
+  // sectionName !== 'top'
+  const optionName = lhs;
+  const rType = getNetworkSectionRType(optionName);
+  return {
+    [sectionName]: { [optionName]: castToRValue(rType)(rhs) },
   };
-  let sectionName: keyof BitcoinConf = 'top';
-  fileContents.split('\n').forEach((originalLine, index) => {
+};
+
+// Note: for single-valued options, the first value takes precedence
+const mergeSections = (section0: Section, section1: Section) => {
+  const section: Section = {};
+  const keys = new Set([...Object.keys(section0), ...Object.keys(section1)]);
+  for (const key of keys) {
+    const value0 = section0[key];
+    const value1 = section1[key];
+    if (typeof value0 !== 'undefined') {
+      if (Array.isArray(value0) && Array.isArray(value1)) {
+        section[key] = [...value0, ...value1];
+      } else {
+        section[key] = value0;
+      }
+    } else {
+      section[key] = value1;
+    }
+  }
+  return section;
+};
+
+const mergeBitcoinConfs = (bitcoinConf0: BitcoinConf, bitcoinConf1: BitcoinConf) => {
+  const bitcoinConf: BitcoinConf = {};
+  const sectionNames = new Set(
+    [...Object.keys(bitcoinConf0), ...Object.keys(bitcoinConf1)].map(castToSectionName),
+  );
+  for (const sectionName of sectionNames) {
+    const section0 = bitcoinConf0[sectionName];
+    const section1 = bitcoinConf1[sectionName];
+    if (section0 && section1) {
+      bitcoinConf[sectionName] = mergeSections(section0, section1);
+    } else {
+      bitcoinConf[sectionName] = section0 || section1;
+    }
+  }
+  return bitcoinConf;
+};
+
+const parseBitcoinConf = (str: string) => {
+  let bitcoinConf: BitcoinConf = {};
+  let parseLine = createParseLine('top');
+  str.split('\n').forEach((originalLine, index) => {
     try {
       let line = originalLine;
 
@@ -126,66 +233,15 @@ const parse = (fileContents: string) => {
         return;
       }
 
-      // [section name] https://bitcoincore.org/en/releases/0.17.0/#configuration-sections-for-testnet-and-regtest
+      // [main/test/regtest] https://bitcoincore.org/en/releases/0.17.0/#configuration-sections-for-testnet-and-regtest
       if (line.startsWith('[') && line.endsWith(']')) {
-        const rawSectionName = line.slice(1, -1);
-        switch (rawSectionName) {
-          case 'top':
-            throw new Error('Section name "top" is reserved');
-          case 'main':
-          case 'test':
-          case 'regtest':
-            sectionName = rawSectionName;
-            if (typeof bitcoinConf[sectionName] === 'undefined') {
-              bitcoinConf[sectionName] = {};
-            }
-            return;
-          default:
-            throw new Error('Section name must be "main", "test", or "regtest"');
-        }
+        const networkName = castToNetworkName(line.slice(1, -1));
+        parseLine = createParseLine(networkName);
+        return;
       }
 
       // name = value
-      const indexOfEqualsSign = line.indexOf('=');
-      if (indexOfEqualsSign === -1) {
-        throw new Error('Expected "name = value"');
-      }
-      const rawName = line.slice(0, indexOfEqualsSign).trim();
-      if (rawName.length === 0) {
-        throw new Error('Empty option name');
-      }
-      const rawValue = line.slice(indexOfEqualsSign + 1).trim();
-      const options: any =
-        sectionName === 'top' ? TOP_SECTION_OPTIONS : NETWORK_SECTION_OPTIONS;
-      const section = bitcoinConf[sectionName]!;
-      const rtType: RtType | undefined = options[rawName];
-      if (typeof rtType === 'undefined') {
-        if (section.other) {
-          const existingValue = section.other[rawName];
-          if (existingValue) {
-            existingValue.push(rawValue);
-          } else {
-            section.other[rawName] = [rawValue];
-          }
-        } else {
-          section.other = {
-            [rawName]: [rawValue],
-          };
-        }
-      } else {
-        // Known config value
-        const rtValue = cast(rawValue, rtType);
-        const existingRtValue = (section as any)[rawName];
-        if (typeof existingRtValue === 'undefined') {
-          (section as any)[rawName] = rtValue;
-        } else {
-          if (rtType.endsWith('ARRAY')) {
-            existingRtValue.push(...(rtValue as any[]));
-          } else {
-            // For non-ARRAY types, subsequent values are ignored
-          }
-        }
-      }
+      bitcoinConf = mergeBitcoinConfs(bitcoinConf, parseLine(line));
     } catch (ex) {
       throw new Error(`Parse error: ${ex.message}: line ${index + 1}: ${originalLine}`);
     }
@@ -195,12 +251,45 @@ const parse = (fileContents: string) => {
 
 export const readConfFileSync = (filePath = getDefaultConfFilePath()) => {
   if (!isAbsolute(filePath)) {
-    throw new Error(`File path must be absolute`);
+    throw new Error('File path must be absolute');
   }
   const fileContents = readFileSync(filePath, { encoding: 'utf8' });
-  return parse(fileContents);
+  return parseBitcoinConf(fileContents);
 };
 
-// export const extractCurrentNetworkConf = (bitcoinConf: BitcoinConf) => {
-//   const topSection = bitcoinConf[TOP_SECTION_NAME];
-// };
+export const extractNetworkConf = (
+  bitcoinConf: BitcoinConf,
+  networkName: NetworkName,
+) => {
+  const topConf = bitcoinConf.top;
+  const conf: any = { ...topConf };
+  for (const name of Object.keys(NETWORK_SELECTION_R_TYPE_MAP)) {
+    delete conf[name];
+  }
+  if (networkName !== 'main') {
+    for (const name of Object.keys(MAIN_ONLY_R_TYPE_MAP)) {
+      delete conf[name];
+    }
+  }
+  Object.assign(conf, bitcoinConf[networkName]);
+  return conf as NetworkSection;
+};
+
+export const extractNetwork = (bitcoinConf: BitcoinConf) => {
+  let networkName: NetworkName = 'main';
+  if (bitcoinConf.top) {
+    if (bitcoinConf.top.regtest && bitcoinConf.top.testnet) {
+      throw new Error('regtest and testnet cannot both be set to true');
+    }
+    if (bitcoinConf.top.regtest) {
+      networkName = 'regtest';
+    } else if (bitcoinConf.top.testnet) {
+      networkName = 'test';
+    }
+  }
+  const networkConf: NetworkSection = extractNetworkConf(bitcoinConf, networkName);
+  return {
+    networkName,
+    networkConf,
+  };
+};

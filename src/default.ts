@@ -1,6 +1,8 @@
 import { join } from 'path';
 import { platform, homedir } from 'os';
-import { BitcoinConfig } from './types';
+
+import { BitcoinConfig } from './config';
+import { OPTIONS } from './options';
 
 export const BITCOIN_CONF_FILENAME = 'bitcoin.conf';
 
@@ -19,23 +21,23 @@ export const getDefaultDatadir = (p = platform()) => {
 };
 
 export const getDefaultBitcoinConfig = (p = platform()) => {
-  const datadir = getDefaultDatadir(p);
   const bitcoinConfig: BitcoinConfig = {
     top: {
-      datadir,
+      datadir: getDefaultDatadir(p),
     },
-    main: {
-      port: 8333,
-      rpcport: 8332,
-    },
-    test: {
-      port: 18333,
-      rpcport: 18332,
-    },
-    regtest: {
-      port: 18444,
-      rpcport: 18443,
-    },
+    main: {},
+    regtest: {},
+    test: {},
   };
+  for (const [optionName, option] of Object.entries(OPTIONS)) {
+    const { defaultValue } = option;
+    if (typeof defaultValue === 'object' && !Array.isArray(defaultValue)) {
+      (bitcoinConfig as any).main[optionName] = defaultValue.main;
+      (bitcoinConfig as any).regtest[optionName] = defaultValue.regtest;
+      (bitcoinConfig as any).test[optionName] = defaultValue.test;
+    } else {
+      (bitcoinConfig as any).top[optionName] = defaultValue;
+    }
+  }
   return bitcoinConfig;
 };

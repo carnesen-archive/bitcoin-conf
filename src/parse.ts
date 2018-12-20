@@ -1,11 +1,20 @@
-import { BitcoinConfig } from './types';
-import { getRType, castToRValue } from './r-type';
-import { SECTION_OPTIONS, TOP_OPTIONS } from './options';
-import { BitcoinConfigKey, castToSectionName } from './names';
 import { mergeBitcoinConfigs } from './merge';
+import { OPTIONS } from './options';
+import { BitcoinConfigKey, BitcoinConfig } from './config';
 
-const getNetworkSectionRType = getRType(SECTION_OPTIONS);
-const getTopSectionRType = getRType(TOP_OPTIONS);
+// const getNetworkSectionTypeName = getRType(SECTION_OPTIONS);
+// const getTopSectionRType = getRType(TOP_OPTIONS);
+
+export const findOptionByName = (maybeOptionName: string) => {
+  const found = Object.entries(OPTIONS).find(
+    ([optionName]) => optionName === maybeOptionName,
+  );
+  if (!found) {
+    throw new Error(`Unknown option name "${maybeOptionName}"`);
+  }
+  const [, option] = found;
+  return option;
+};
 
 const createParseLine = (context: BitcoinConfigKey) => (line: string): BitcoinConfig => {
   const indexOfEqualsSign = line.indexOf('=');
@@ -23,21 +32,21 @@ const createParseLine = (context: BitcoinConfigKey) => (line: string): BitcoinCo
       // context === 'top' && indexOfDot > -1
       const sectionName = castToSectionName(lhs.slice(0, indexOfDot));
       const optionName = lhs.slice(indexOfDot + 1);
-      const rType = getNetworkSectionRType(optionName);
-      return { [sectionName]: { [optionName]: castToRValue(rType)(rhs) } };
+      const typeName = getNetworkSectionTypeName(optionName);
+      return { [sectionName]: { [optionName]: castTo(typeName)(rhs) } };
     }
     // context === 'top' && indexOfDot === -1
     const optionName = lhs;
-    const rType = getTopSectionRType(lhs);
+    const typeName = getTopSectionRType(lhs);
     return {
-      [context]: { [optionName]: castToRValue(rType)(rhs) },
+      [context]: { [optionName]: castTo(typeName)(rhs) },
     };
   }
   // sectionName !== 'top'
   const optionName = lhs;
-  const rType = getNetworkSectionRType(optionName);
+  const typeName = getNetworkSectionTypeName(optionName);
   return {
-    [context]: { [optionName]: castToRValue(rType)(rhs) },
+    [context]: { [optionName]: castTo(typeName)(rhs) },
   };
 };
 

@@ -2,9 +2,8 @@ import { isAbsolute, join } from 'path';
 import { readFileSync } from 'fs';
 import { getDefaultDatadir, BITCOIN_CONF_FILENAME } from './default';
 import { parseBitcoinConf } from './parse';
-import { extractEffectiveConfig } from './extract';
+import { extractEffectiveTopConfig } from './extract';
 import { mergeBitcoinConfigs } from './merge';
-import { BitcoinConfig } from './types';
 
 const toAbsolute = (filePath: string, datadir?: string) => {
   if (isAbsolute(filePath)) {
@@ -30,7 +29,8 @@ export const readConfFiles = (options: { conf?: string; datadir?: string } = {})
       datadir,
     },
   });
-  const config0 = extractEffectiveConfig(bitcoinConfig);
+  // We need to extract the effective config here to know which includefiles to read
+  const config0 = extractEffectiveTopConfig(bitcoinConfig);
   const { includefile } = config0;
   if (includefile) {
     for (const includedConf of includefile) {
@@ -38,6 +38,6 @@ export const readConfFiles = (options: { conf?: string; datadir?: string } = {})
       bitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, includedBitcoinConfig);
     }
   }
-  const config = extractEffectiveConfig(bitcoinConfig);
+  const config = extractEffectiveTopConfig(bitcoinConfig);
   return config;
 };

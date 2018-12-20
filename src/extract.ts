@@ -1,50 +1,35 @@
-import { BitcoinConfig, SectionConfig, TopConfig } from './types';
-import { MAIN_ONLY_OPTIONS, SECTION_OPTIONS } from './options';
-import { pruneConfig, mergeConfigs } from './r-type';
-import { SectionName } from './names';
-import { mergeBitcoinConfigs } from './merge';
+import { BitcoinConfig, SectionName, TopConfig } from './config';
+import { mergeBitcoinConfigs, mergeConfigs } from './merge';
 import { getDefaultBitcoinConfig } from './default';
+import { OPTIONS } from './options';
 
-const extractConfigByName = (
-  bitcoinConfig: BitcoinConfig,
-  sectionName: SectionName,
-): SectionConfig => {
-  const sectionConfig = bitcoinConfig[sectionName];
-  if (bitcoinConfig.top) {
-    const prunedTopConfig = pruneConfig(bitcoinConfig.top || {}, SECTION_OPTIONS);
-    if (sectionName !== 'main') {
-      for (const key of Object.keys(MAIN_ONLY_OPTIONS)) {
-        delete prunedTopConfig[key as keyof typeof MAIN_ONLY_OPTIONS];
-      }
-    }
-    if (sectionConfig) {
-      return mergeConfigs(prunedTopConfig, sectionConfig);
-    }
-    return prunedTopConfig;
-  }
-  if (sectionConfig) {
-    return sectionConfig;
-  }
-  return {};
-};
-
-export const extractEffectiveConfig = (bitcoinConfig: BitcoinConfig) => {
-  const defaultBitcoinConfig = getDefaultBitcoinConfig();
-  const effectiveBitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, defaultBitcoinConfig);
+export const extractEffectiveTopConfig = (passedBitcoinConfig: BitcoinConfig) => {
+  const bitcoinConfig = mergeBitcoinConfigs(
+    passedBitcoinConfig,
+    getDefaultBitcoinConfig(),
+  );
+  const topConfig: TopConfig = bitcoinConfig.top!;
   let sectionName: SectionName = 'main';
-  if (effectiveBitcoinConfig.top) {
-    if (effectiveBitcoinConfig.top.regtest && effectiveBitcoinConfig.top.testnet) {
+  if (topConfig) {
+    if (topConfig.regtest && topConfig.testnet) {
       throw new Error('regtest and testnet cannot both be set to true');
     }
-    if (effectiveBitcoinConfig.top.regtest) {
+    if (topConfig.regtest) {
       sectionName = 'regtest';
-    } else if (effectiveBitcoinConfig.top.testnet) {
+    } else if (topConfig.testnet) {
       sectionName = 'test';
     }
   }
-  const effectiveConfig: TopConfig = extractConfigByName(
-    effectiveBitcoinConfig,
-    sectionName,
-  );
-  return effectiveConfig;
+
+  if (sectionName !== 'main') {
+    for (const [optionName, option] of Object.entries(OPTIONS)) {
+      if (option.onlyAppliesToMain) {
+        delete (topConfig as any)[optionName];
+      }
+    }
+  }
+
+  const sectionConfig = bitcoinConfig[sectionName]!;
+
+  return mergeConfigs(topConfig, sectionConfig) as TopConfig;
 };

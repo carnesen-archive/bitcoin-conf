@@ -14,5 +14,14 @@
         "src",
       ]
     },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch dev",
+      "program": "${workspaceFolder}/node_modules/.bin/ts-node",
+      "args": [
+        "src/dev.ts",
+      ]
+    },
   ]
 }

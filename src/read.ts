@@ -11,14 +11,12 @@ const readAndParseConfFile = (conf: string, datadir?: string) => {
   return parseBitcoinConf(fileContents);
 };
 
-export const readConfFiles = (options: { conf?: string; datadir?: string } = {}) => {
-  const { conf, datadir } = options;
+type Options = Partial<{ conf: string; datadir: string; withDefaults: boolean }>;
+
+export const readConfFiles = (options: Options = {}) => {
+  const { conf, datadir, withDefaults } = options;
   let bitcoinConfig = readAndParseConfFile(conf || BITCOIN_CONF_FILENAME, datadir);
-  bitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, {
-    top: {
-      datadir,
-    },
-  });
+
   // We need to extract the effective config here to know which includefiles to read
   const config0 = extractEffectiveTopConfig(bitcoinConfig);
   const { includeconf } = config0;
@@ -28,6 +26,6 @@ export const readConfFiles = (options: { conf?: string; datadir?: string } = {})
       bitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, includedBitcoinConfig);
     }
   }
-  const config = extractEffectiveTopConfig(bitcoinConfig);
+  const config = extractEffectiveTopConfig(bitcoinConfig, { withDefaults });
   return config;
 };

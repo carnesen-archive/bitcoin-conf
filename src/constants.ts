@@ -3,7 +3,7 @@ import { createOption } from './option';
 export const SECTION_NAMES = ['main' as 'main', 'regtest' as 'regtest', 'test' as 'test'];
 export const BITCOIN_CONFIG_KEYS = ['top' as 'top', ...SECTION_NAMES];
 
-export const OPTIONS = {
+export const BITCOIN_CONFIG_OPTIONS = {
   acceptnonstdtxn: createOption({
     longName: 'accept non-standard transactions',
     typeName: 'boolean',

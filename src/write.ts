@@ -1,42 +1,55 @@
 import { BitcoinConfig } from './config';
-import { toAbsolute, findOption, castToSectionName } from './util';
+import { toAbsolute, findOption } from './util';
 import { BITCOIN_CONF_FILENAME } from './default';
+import { writeFileSync } from 'fs';
+import { BITCOIN_CONFIG_KEYS } from './constants';
+import { serialize } from './option';
 const pkg = require('../package.json');
 
-function writeConfFile(
+export const writeConfFiles = (
   bitcoinConfig: BitcoinConfig,
-  options: { conf?: string; datadir?: string },
-) {
+  options: { conf?: string; datadir?: string } = {},
+) => {
   const { conf, datadir } = options;
   let fileContents = '';
+  const append = (str?: string) => {
+    if (str) {
+      fileContents += str;
+    }
+    fileContents += '\n';
+  };
   const comment = (x: string | string[]) => {
     if (typeof x === 'string') {
-      fileContents += `# ${x}`;
+      append(`# ${x}`);
     } else {
       for (const str of x) {
-        fileContents += `# ${str}`;
+        append(`# ${str}`);
       }
     }
   };
 
-  comment(`This file was written by ${writeConfFile.name} in ${pkg.name}`);
-  const topConfig = bitcoinConfig.top;
-  for (const [bitcoinConfigKey, sectionConfig] of Object.entries(bitcoinConfig)) {
+  comment(`${new Date()}: This file was written by ${pkg.name}`);
+  append();
+
+  for (const bitcoinConfigKey of BITCOIN_CONFIG_KEYS) {
+    const sectionConfig = bitcoinConfig[bitcoinConfigKey];
+    if (!sectionConfig) {
+      continue;
+    }
     if (bitcoinConfigKey !== 'top') {
-      const sectionName = castToSectionName(bitcoinConfigKey);
-      fileContents += `\n[${sectionName}]`;
+      append(`[${bitcoinConfigKey}]`);
+      append();
     }
     for (const [optionName, optionValue] of Object.entries(sectionConfig)) {
-      const option = findOption(optionName)
-      if (Array.isArray(optionValue)) {
-        for (const item of optionValue) {
-          fileContents += 
-        }
+      const { option } = findOption(optionName);
+      comment(option.description);
+      if (typeof optionValue !== 'undefined') {
+        append(serialize(optionName, optionValue));
+        append();
       }
     }
   }
 
   const filePath = toAbsolute(conf || BITCOIN_CONF_FILENAME, datadir);
-}
-
-export { writeConfFile };
+  writeFileSync(filePath, fileContents);
+};

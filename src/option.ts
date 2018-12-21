@@ -1,3 +1,5 @@
+import { EOL } from 'os';
+
 export type TypeName = 'string' | 'string[]' | 'boolean' | 'number';
 export type OptionValue<T extends TypeName> = T extends 'string'
   ? string
@@ -5,6 +7,35 @@ export type OptionValue<T extends TypeName> = T extends 'string'
     ? boolean
     : T extends 'number' ? number : T extends 'string[]' ? string[] : never;
 
+export type Option<
+  T extends TypeName = TypeName,
+  NotAllowedInMain extends boolean = boolean,
+  OnlyAllowedInTop extends boolean = boolean
+> = {
+  typeName: T;
+  longName: string;
+  description: string | string[];
+  defaultValue?:
+    | OptionValue<T>
+    | {
+        main: OptionValue<T>;
+        test: OptionValue<T>;
+        regtest: OptionValue<T>;
+      };
+  notAllowedInMain?: NotAllowedInMain;
+  onlyAppliesToMain?: boolean;
+  onlyAllowedInTop?: OnlyAllowedInTop;
+};
+
+export const createOption = <
+  T extends TypeName,
+  NotAllowedInMain extends boolean,
+  OnlyAllowedInTop extends boolean
+>(
+  option: Option<T, NotAllowedInMain, OnlyAllowedInTop>,
+) => option;
+
+export { castTo };
 function castTo(typeName: 'string'): (str: string) => string;
 function castTo(typeName: 'string[]'): (str: string) => string[];
 function castTo(typeName: 'number'): (str: string) => number;
@@ -35,32 +66,17 @@ function castTo(typeName: TypeName) {
   };
 }
 
-export { castTo };
-
-export type Option<
-  T extends TypeName = TypeName,
-  NotAllowedInMain extends boolean = boolean,
-  OnlyAllowedInTop extends boolean = boolean
-> = {
-  typeName: T;
-  longName: string;
-  description: string | string[];
-  defaultValue?:
-    | OptionValue<T>
-    | {
-        main: OptionValue<T>;
-        test: OptionValue<T>;
-        regtest: OptionValue<T>;
-      };
-  notAllowedInMain?: NotAllowedInMain;
-  onlyAppliesToMain?: boolean;
-  onlyAllowedInTop?: OnlyAllowedInTop;
+export const serialize = (optionName: string, optionValue: OptionValue<TypeName>) => {
+  if (Array.isArray(optionValue)) {
+    return optionValue
+      .map(optionValueItem => `${optionName}=${optionValueItem}`)
+      .join(EOL);
+  }
+  if (optionValue === true) {
+    return `${optionName}=1`;
+  }
+  if (optionValue === false) {
+    return `${optionName}=0`;
+  }
+  return `${optionName}=${optionValue}`;
 };
-
-export const createOption = <
-  T extends TypeName,
-  NotAllowedInMain extends boolean,
-  OnlyAllowedInTop extends boolean
->(
-  option: Option<T, NotAllowedInMain, OnlyAllowedInTop>,
-) => option;

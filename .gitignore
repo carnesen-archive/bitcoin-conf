@@ -1,5 +1,8 @@
 ### Node ###
 
+# Written by unit tests
+tmp.conf
+
 # Logs
 logs
 npm-debug.log*

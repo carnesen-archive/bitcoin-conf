@@ -1,7 +1,16 @@
 import { mergeBitcoinConfigs } from './merge';
 import { BitcoinConfig } from './config';
 import { castTo } from './option';
-import { findOption, castToSectionName } from './util';
+import { findOption } from './util';
+import { SECTION_NAMES } from './constants';
+
+export const castToSectionName = (maybeSectionName: string) => {
+  const sectionName = maybeSectionName as (typeof SECTION_NAMES)[number];
+  if (!SECTION_NAMES.includes(sectionName)) {
+    throw new Error(`Expected section name to be one of ${SECTION_NAMES}`);
+  }
+  return sectionName;
+};
 
 const createParseLine = (context: keyof BitcoinConfig) => (
   line: string,

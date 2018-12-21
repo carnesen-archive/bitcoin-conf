@@ -1,6 +1,6 @@
 import { isAbsolute, join } from 'path';
 import { getDefaultDatadir } from './default';
-import { SECTION_NAMES, OPTIONS } from './constants';
+import { SECTION_NAMES, BITCOIN_CONFIG_OPTIONS } from './constants';
 
 export const toAbsolute = (filePath: string, datadir?: string) => {
   if (isAbsolute(filePath)) {
@@ -16,13 +16,13 @@ export const findOption = (
   maybeOptionName: string,
   sectionName?: (typeof SECTION_NAMES)[number],
 ) => {
-  const found = Object.entries(OPTIONS).find(
+  const found = Object.entries(BITCOIN_CONFIG_OPTIONS).find(
     ([optionName]) => optionName === maybeOptionName,
   );
   if (!found) {
     throw new Error(`Unknown option name "${maybeOptionName}"`);
   }
-  const optionName = maybeOptionName as keyof typeof OPTIONS;
+  const optionName = maybeOptionName as keyof typeof BITCOIN_CONFIG_OPTIONS;
   const [, option] = found;
   if (sectionName) {
     if (option.onlyAllowedInTop) {
@@ -36,12 +36,4 @@ export const findOption = (
     optionName,
     option,
   };
-};
-
-export const castToSectionName = (maybeSectionName: string) => {
-  const sectionName = maybeSectionName as (typeof SECTION_NAMES)[number];
-  if (!SECTION_NAMES.includes(sectionName)) {
-    throw new Error(`Expected section name to be one of ${SECTION_NAMES}`);
-  }
-  return sectionName;
 };

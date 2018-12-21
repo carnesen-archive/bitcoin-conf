@@ -1,22 +1,11 @@
 import { mergeBitcoinConfigs } from './merge';
-import { OPTIONS } from './options';
-import { BitcoinConfigKey, BitcoinConfig } from './config';
+import { BitcoinConfig } from './config';
+import { castTo } from './option';
+import { findOption, castToSectionName } from './util';
 
-// const getNetworkSectionTypeName = getRType(SECTION_OPTIONS);
-// const getTopSectionRType = getRType(TOP_OPTIONS);
-
-export const findOptionByName = (maybeOptionName: string) => {
-  const found = Object.entries(OPTIONS).find(
-    ([optionName]) => optionName === maybeOptionName,
-  );
-  if (!found) {
-    throw new Error(`Unknown option name "${maybeOptionName}"`);
-  }
-  const [, option] = found;
-  return option;
-};
-
-const createParseLine = (context: BitcoinConfigKey) => (line: string): BitcoinConfig => {
+const createParseLine = (context: keyof BitcoinConfig) => (
+  line: string,
+): BitcoinConfig => {
   const indexOfEqualsSign = line.indexOf('=');
   if (indexOfEqualsSign === -1) {
     throw new Error('Expected "name = value"');
@@ -30,23 +19,24 @@ const createParseLine = (context: BitcoinConfigKey) => (line: string): BitcoinCo
     const indexOfDot = lhs.indexOf('.');
     if (indexOfDot > -1) {
       // context === 'top' && indexOfDot > -1
-      const sectionName = castToSectionName(lhs.slice(0, indexOfDot));
-      const optionName = lhs.slice(indexOfDot + 1);
-      const typeName = getNetworkSectionTypeName(optionName);
-      return { [sectionName]: { [optionName]: castTo(typeName)(rhs) } };
+      const maybeSectionName = lhs.slice(0, indexOfDot);
+      const sectionName = castToSectionName(maybeSectionName);
+      const maybeOptionName = lhs.slice(indexOfDot + 1);
+      const { optionName, option } = findOption(maybeOptionName);
+      return { [sectionName]: { [optionName]: castTo(option.typeName)(rhs) } };
     }
     // context === 'top' && indexOfDot === -1
-    const optionName = lhs;
-    const typeName = getTopSectionRType(lhs);
+    const maybeOptionName = lhs;
+    const { optionName, option } = findOption(maybeOptionName);
     return {
-      [context]: { [optionName]: castTo(typeName)(rhs) },
+      [context]: { [optionName]: castTo(option.typeName)(rhs) },
     };
   }
   // sectionName !== 'top'
-  const optionName = lhs;
-  const typeName = getNetworkSectionTypeName(optionName);
+  const maybeOptionName = lhs;
+  const { optionName, option } = findOption(maybeOptionName);
   return {
-    [context]: { [optionName]: castTo(typeName)(rhs) },
+    [context]: { [optionName]: castTo(option.typeName)(rhs) },
   };
 };
 

@@ -2,7 +2,7 @@ import { join } from 'path';
 import { platform, homedir } from 'os';
 
 import { BitcoinConfig } from './config';
-import { OPTIONS } from './options';
+import { OPTIONS } from './constants';
 
 export const BITCOIN_CONF_FILENAME = 'bitcoin.conf';
 

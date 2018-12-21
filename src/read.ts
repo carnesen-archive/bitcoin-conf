@@ -1,19 +1,9 @@
-import { isAbsolute, join } from 'path';
 import { readFileSync } from 'fs';
-import { getDefaultDatadir, BITCOIN_CONF_FILENAME } from './default';
+import { BITCOIN_CONF_FILENAME } from './default';
 import { parseBitcoinConf } from './parse';
 import { extractEffectiveTopConfig } from './extract';
 import { mergeBitcoinConfigs } from './merge';
-
-const toAbsolute = (filePath: string, datadir?: string) => {
-  if (isAbsolute(filePath)) {
-    return filePath;
-  }
-  if (datadir && !isAbsolute(datadir)) {
-    throw new Error('Path "datadir" must be absolute');
-  }
-  return join(datadir || getDefaultDatadir(), filePath);
-};
+import { toAbsolute } from './util';
 
 const readAndParseConfFile = (conf: string, datadir?: string) => {
   const confPath = toAbsolute(conf, datadir);
@@ -31,9 +21,9 @@ export const readConfFiles = (options: { conf?: string; datadir?: string } = {})
   });
   // We need to extract the effective config here to know which includefiles to read
   const config0 = extractEffectiveTopConfig(bitcoinConfig);
-  const { includefile } = config0;
-  if (includefile) {
-    for (const includedConf of includefile) {
+  const { includeconf } = config0;
+  if (includeconf) {
+    for (const includedConf of includeconf) {
       const includedBitcoinConfig = readAndParseConfFile(includedConf, datadir);
       bitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, includedBitcoinConfig);
     }

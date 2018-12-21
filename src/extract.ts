@@ -1,7 +1,7 @@
-import { BitcoinConfig, SectionName, TopConfig } from './config';
-import { mergeBitcoinConfigs, mergeConfigs } from './merge';
+import { BitcoinConfig, TopConfig } from './config';
+import { mergeBitcoinConfigs, mergeSectionConfigs } from './merge';
 import { getDefaultBitcoinConfig } from './default';
-import { OPTIONS } from './options';
+import { OPTIONS } from './constants';
 
 export const extractEffectiveTopConfig = (passedBitcoinConfig: BitcoinConfig) => {
   const bitcoinConfig = mergeBitcoinConfigs(
@@ -9,7 +9,7 @@ export const extractEffectiveTopConfig = (passedBitcoinConfig: BitcoinConfig) =>
     getDefaultBitcoinConfig(),
   );
   const topConfig: TopConfig = bitcoinConfig.top!;
-  let sectionName: SectionName = 'main';
+  let sectionName: keyof BitcoinConfig = 'main';
   if (topConfig) {
     if (topConfig.regtest && topConfig.testnet) {
       throw new Error('regtest and testnet cannot both be set to true');
@@ -31,5 +31,6 @@ export const extractEffectiveTopConfig = (passedBitcoinConfig: BitcoinConfig) =>
 
   const sectionConfig = bitcoinConfig[sectionName]!;
 
-  return mergeConfigs(topConfig, sectionConfig) as TopConfig;
+  const effectiveTopConfig = mergeSectionConfigs(topConfig, sectionConfig);
+  return effectiveTopConfig;
 };

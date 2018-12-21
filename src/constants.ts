@@ -1,5 +1,8 @@
 import { createOption } from './option';
 
+export const SECTION_NAMES = ['main' as 'main', 'regtest' as 'regtest', 'test' as 'test'];
+export const BITCOIN_CONFIG_KEYS = ['top' as 'top', ...SECTION_NAMES];
+
 export const OPTIONS = {
   acceptnonstdtxn: createOption({
     longName: 'accept non-standard transactions',
@@ -851,6 +854,15 @@ export const OPTIONS = {
     defaultValue: '.cookie',
   }),
 
+  rpcpassword: createOption({
+    longName: 'rpc password',
+    typeName: 'string',
+    description: [
+      'Deprecated. Specify a plain-text RPC password.',
+      'If this option is provided, RPC "cookie-based" auth is disabled',
+    ],
+  }),
+
   rpcport: createOption({
     longName: 'rpc port',
     typeName: 'number',
@@ -885,6 +897,12 @@ export const OPTIONS = {
     typeName: 'number',
     description: 'Number of threads for handling RPC calls.',
     defaultValue: 4,
+  }),
+
+  rpcuser: createOption({
+    longName: 'rpc user',
+    typeName: 'string',
+    description: 'Specify username for RPC http basic authentication',
   }),
 
   rpcworkqueue: createOption({

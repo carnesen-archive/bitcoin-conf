@@ -1,1 +1,2 @@
-export { readConfFiles as readConfigFiles } from './read';
+export { readConfFiles } from './read';
+export { writeConfFile } from './write';

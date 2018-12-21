@@ -1,47 +1,59 @@
-import { SectionConfig, BitcoinConfig, castToBitcoinConfigKey } from './config';
-import { OPTIONS } from './options';
+import { BitcoinConfig, TopConfig, MainConfig, TestConfig } from './config';
+import { BITCOIN_CONFIG_KEYS } from './constants';
 
-// Note: for single-valued options, the first value takes precedence
-export const mergeConfigs = <T extends keyof typeof OPTIONS>(
-  config0: SectionConfig<T>,
-  config1: SectionConfig<T>,
-) => {
-  const keys0 = Object.keys(config0) as T[];
-  const keys1 = Object.keys(config1) as T[];
-  const obj: SectionConfig<T> = {};
-  const keys = new Set([...keys0, ...keys1]);
-  for (const key of keys) {
-    const value0 = config0[key];
-    const value1 = config1[key];
+type AnySectionConfig = TopConfig | MainConfig | TestConfig;
+
+// For single-valued options, the first value takes precedence.
+// Options with value undefined are not copied into the merged config.
+// Arrays are merged with config0 values coming first.
+
+function mergeSectionConfigs(
+  sectionConfig0: TopConfig,
+  sectionConfig1: AnySectionConfig,
+): TopConfig;
+function mergeSectionConfigs<T extends AnySectionConfig>(
+  sectionConfig0: T,
+  sectionConfig1: T,
+): T;
+function mergeSectionConfigs(
+  sectionConfig0: AnySectionConfig,
+  sectionConfig1: AnySectionConfig,
+) {
+  const mergedSectionConfig: AnySectionConfig = {};
+  const optionNames0 = Object.keys(sectionConfig0);
+  const optionNames1 = Object.keys(sectionConfig1);
+  const uniqueOptionNames = new Set([...optionNames0, ...optionNames1]);
+  for (const optionName of uniqueOptionNames) {
+    const value0 = (sectionConfig0 as any)[optionName];
+    const value1 = (sectionConfig1 as any)[optionName];
     if (typeof value0 !== 'undefined') {
       if (Array.isArray(value0) && Array.isArray(value1)) {
-        (obj as any)[key] = [...value0, ...value1];
+        (mergedSectionConfig as any)[optionName] = [...value0, ...value1];
       } else {
-        (obj as any)[key] = value0;
+        (mergedSectionConfig as any)[optionName] = value0;
       }
-    } else {
-      obj[key] = value1;
+    } else if (typeof value1 !== 'undefined') {
+      (mergedSectionConfig as any)[optionName] = value1;
     }
   }
-  return obj;
-};
+  return mergedSectionConfig;
+}
 
-export const mergeBitcoinConfigs = (
+function mergeBitcoinConfigs(
   bitcoinConfig0: BitcoinConfig,
   bitcoinConfig1: BitcoinConfig,
-) => {
-  const config: BitcoinConfig = {};
-  const keys0 = Object.keys(bitcoinConfig0);
-  const keys1 = Object.keys(bitcoinConfig1);
-  const keys = new Set([...keys0, ...keys1].map(castToBitcoinConfigKey));
-  for (const key of keys) {
+) {
+  const mergedBitcoinConfig: BitcoinConfig = {};
+  for (const key of BITCOIN_CONFIG_KEYS) {
     const config0 = bitcoinConfig0[key];
     const config1 = bitcoinConfig1[key];
     if (config0 && config1) {
-      config[key] = mergeConfigs(config0, config1);
+      mergedBitcoinConfig[key] = mergeSectionConfigs(config0, config1);
     } else if (config0 || config1) {
-      config[key] = config0 || config1;
+      mergedBitcoinConfig[key] = config0 || config1;
     }
   }
-  return config;
-};
+  return mergedBitcoinConfig;
+}
+
+export { mergeBitcoinConfigs, mergeSectionConfigs };

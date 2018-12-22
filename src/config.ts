@@ -1,35 +1,28 @@
-import { BITCOIN_CONFIG_OPTIONS } from './constants';
-import { Option, OptionValue } from './option';
+import { BITCOIN_CONFIG_OPTIONS, Value } from './options';
+import { SectionName } from './names';
 
-type MainOptionName = {
-  [K in keyof typeof BITCOIN_CONFIG_OPTIONS]: (typeof BITCOIN_CONFIG_OPTIONS)[K] extends
-    | Option<any, true, any>
-    | Option<any, any, true>
+type Options = typeof BITCOIN_CONFIG_OPTIONS;
+
+type OptionName<S extends SectionName> = {
+  [OptionName in keyof Options]: (Options)[OptionName]['notAllowedIn'] extends {
+    [T in S]: true
+  }
     ? never
-    : K
-}[keyof typeof BITCOIN_CONFIG_OPTIONS];
+    : OptionName
+}[keyof Options];
 
-type TestOptionName = {
-  [K in keyof typeof BITCOIN_CONFIG_OPTIONS]: (typeof BITCOIN_CONFIG_OPTIONS)[K] extends Option<
-    any,
-    any,
-    true
-  >
-    ? never
-    : K
-}[keyof typeof BITCOIN_CONFIG_OPTIONS];
+type Section<S extends SectionName> = Partial<
+  { [K in OptionName<S>]: Value<Options[K]['typeName']> }
+>;
 
-export type SectionConfig<T extends keyof typeof BITCOIN_CONFIG_OPTIONS> = {
-  [K in T]?: OptionValue<typeof BITCOIN_CONFIG_OPTIONS[K]['typeName']>
-};
-
-export interface TopConfig extends SectionConfig<keyof typeof BITCOIN_CONFIG_OPTIONS> {}
-export interface MainConfig extends SectionConfig<MainOptionName> {}
-export interface TestConfig extends SectionConfig<TestOptionName> {}
+export interface TopSection extends Section<'top'> {}
+export interface MainSection extends Section<'main'> {}
+export interface RegtestSection extends Section<'regtest'> {}
+export interface TestSection extends Section<'test'> {}
 
 export interface BitcoinConfig {
-  top?: TopConfig;
-  main?: MainConfig;
-  test?: TestConfig;
-  regtest?: TestConfig;
+  top?: TopSection;
+  main?: MainSection;
+  regtest?: RegtestSection;
+  test?: TestSection;
 }

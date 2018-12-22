@@ -2,7 +2,7 @@ import { join } from 'path';
 import { platform, homedir } from 'os';
 
 import { BitcoinConfig } from './config';
-import { BITCOIN_CONFIG_OPTIONS } from './constants';
+import { BITCOIN_CONFIG_OPTIONS } from './options';
 
 export const BITCOIN_CONF_FILENAME = 'bitcoin.conf';
 
@@ -31,7 +31,11 @@ export const getDefaultBitcoinConfig = (p = platform()) => {
   };
   for (const [optionName, option] of Object.entries(BITCOIN_CONFIG_OPTIONS)) {
     const { defaultValue } = option;
-    if (typeof defaultValue === 'object' && !Array.isArray(defaultValue)) {
+    if (
+      defaultValue !== null &&
+      typeof defaultValue === 'object' &&
+      !Array.isArray(defaultValue)
+    ) {
       (bitcoinConfig as any).main[optionName] = defaultValue.main;
       (bitcoinConfig as any).regtest[optionName] = defaultValue.regtest;
       (bitcoinConfig as any).test[optionName] = defaultValue.test;

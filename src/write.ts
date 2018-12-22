@@ -1,12 +1,29 @@
+import { writeFileSync } from 'fs';
+import { EOL } from 'os';
+
 import { BitcoinConfig } from './config';
 import { toAbsolute, findOption } from './util';
 import { BITCOIN_CONF_FILENAME } from './default';
-import { writeFileSync } from 'fs';
-import { BITCOIN_CONFIG_KEYS } from './constants';
-import { serialize } from './option';
+import { Value, TypeName } from './options';
+import { SECTION_NAMES } from './names';
 const pkg = require('../package.json');
 
-export const writeConfFiles = (
+const serialize = (optionName: string, optionValue: Value<TypeName>) => {
+  if (Array.isArray(optionValue)) {
+    return optionValue
+      .map(optionValueItem => `${optionName}=${optionValueItem}`)
+      .join(EOL);
+  }
+  if (optionValue === true) {
+    return `${optionName}=1`;
+  }
+  if (optionValue === false) {
+    return `${optionName}=0`;
+  }
+  return `${optionName}=${optionValue}`;
+};
+
+export const writeConfigFiles = (
   bitcoinConfig: BitcoinConfig,
   options: { conf?: string; datadir?: string } = {},
 ) => {
@@ -31,19 +48,19 @@ export const writeConfFiles = (
   comment(`${new Date()}: This file was written by ${pkg.name}`);
   append();
 
-  for (const bitcoinConfigKey of BITCOIN_CONFIG_KEYS) {
-    const sectionConfig = bitcoinConfig[bitcoinConfigKey];
+  for (const sectionName of SECTION_NAMES) {
+    const sectionConfig = bitcoinConfig[sectionName];
     if (!sectionConfig) {
       continue;
     }
-    if (bitcoinConfigKey !== 'top') {
-      append(`[${bitcoinConfigKey}]`);
+    if (sectionName !== 'top') {
+      append(`[${sectionName}]`);
       append();
     }
     for (const [optionName, optionValue] of Object.entries(sectionConfig)) {
       const { option } = findOption(optionName);
       comment(option.description);
-      if (typeof optionValue !== 'undefined') {
+      if (optionValue != null) {
         append(serialize(optionName, optionValue));
         append();
       }

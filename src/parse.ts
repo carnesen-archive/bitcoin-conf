@@ -1,15 +1,26 @@
 import { mergeBitcoinConfigs } from './merge';
 import { BitcoinConfig } from './config';
-import { castTo } from './option';
 import { findOption } from './util';
-import { SECTION_NAMES } from './constants';
+import { TypeName } from './options';
+import { castToNetworkName } from './names';
 
-export const castToSectionName = (maybeSectionName: string) => {
-  const sectionName = maybeSectionName as (typeof SECTION_NAMES)[number];
-  if (!SECTION_NAMES.includes(sectionName)) {
-    throw new Error(`Expected section name to be one of ${SECTION_NAMES}`);
+const castToValue = (typeName: TypeName) => (str: string) => {
+  switch (typeName) {
+    case 'string': {
+      return str;
+    }
+    case 'string[]': {
+      return [str];
+    }
+    case 'boolean': {
+      return str === '1';
+    }
+    case 'number': {
+      return Number(str);
+    }
+    default:
+      throw new Error(`Unknown type name ${typeName}`);
   }
-  return sectionName;
 };
 
 const createParseLine = (context: keyof BitcoinConfig) => (
@@ -29,23 +40,23 @@ const createParseLine = (context: keyof BitcoinConfig) => (
     if (indexOfDot > -1) {
       // context === 'top' && indexOfDot > -1
       const maybeSectionName = lhs.slice(0, indexOfDot);
-      const sectionName = castToSectionName(maybeSectionName);
+      const sectionName = castToNetworkName(maybeSectionName);
       const maybeOptionName = lhs.slice(indexOfDot + 1);
       const { optionName, option } = findOption(maybeOptionName);
-      return { [sectionName]: { [optionName]: castTo(option.typeName)(rhs) } };
+      return { [sectionName]: { [optionName]: castToValue(option.typeName)(rhs) } };
     }
     // context === 'top' && indexOfDot === -1
     const maybeOptionName = lhs;
     const { optionName, option } = findOption(maybeOptionName);
     return {
-      [context]: { [optionName]: castTo(option.typeName)(rhs) },
+      [context]: { [optionName]: castToValue(option.typeName)(rhs) },
     };
   }
   // sectionName !== 'top'
   const maybeOptionName = lhs;
   const { optionName, option } = findOption(maybeOptionName);
   return {
-    [context]: { [optionName]: castTo(option.typeName)(rhs) },
+    [context]: { [optionName]: castToValue(option.typeName)(rhs) },
   };
 };
 
@@ -72,7 +83,7 @@ export const parseBitcoinConf = (str: string) => {
 
       // [main/test/regtest] https://bitcoincore.org/en/releases/0.17.0/#configuration-sections-for-testnet-and-regtest
       if (line.startsWith('[') && line.endsWith(']')) {
-        const sectionName = castToSectionName(line.slice(1, -1));
+        const sectionName = castToNetworkName(line.slice(1, -1));
         parseLine = createParseLine(sectionName);
         return;
       }

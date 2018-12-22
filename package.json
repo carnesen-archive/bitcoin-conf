@@ -1,7 +1,7 @@
 {
-  "name": "@carnesen/bitcoin-conf",
-  "description": "Constants and utility methods related to Bitcoin configuration",
-  "version": "0.0.2-0",
+  "name": "bitcoin-config",
+  "description": "Constants and utilities related to Bitcoin configuration",
+  "version": "0.0.0-0",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "engines": {
@@ -40,10 +40,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/carnesen/bitcoin-conf.git"
+    "url": "https://github.com/carnesen/bitcoin-config.git"
   },
   "bugs": {
-    "url": "https://github.com/carnesen/bitcoin-conf/issues"
+    "url": "https://github.com/carnesen/bitcoin-config/issues"
   },
-  "homepage": "https://github.com/carnesen/bitcoin-conf"
+  "homepage": "https://github.com/carnesen/bitcoin-config"
 }

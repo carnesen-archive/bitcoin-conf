@@ -1,7 +1,56 @@
-import { createOption } from './option';
+import { NetworkName } from './names';
 
-export const SECTION_NAMES = ['main' as 'main', 'regtest' as 'regtest', 'test' as 'test'];
-export const BITCOIN_CONFIG_KEYS = ['top' as 'top', ...SECTION_NAMES];
+export type TypeName = 'string' | 'string[]' | 'boolean' | 'number';
+export type Value<T extends TypeName> = T extends 'string'
+  ? string
+  : T extends 'boolean'
+    ? boolean
+    : T extends 'number' ? number : T extends 'string[]' ? string[] : never;
+
+type NotAllowedIn = Partial<{
+  top: true;
+  main: true;
+  regtest: true;
+  test: true;
+}>;
+
+type DefaultValue<T extends TypeName> = Value<T> | { [K in NetworkName]: Value<T> };
+
+export type Option<T extends TypeName, U extends NotAllowedIn> = {
+  typeName: T;
+  longName: string;
+  defaultValue: DefaultValue<T> | null;
+  description: string[];
+  notAllowedIn: U;
+  onlyAppliesToMain: boolean;
+};
+
+export const createOption = <T extends TypeName, U extends NotAllowedIn>(arg: {
+  typeName: T;
+  longName: string;
+  defaultValue?: DefaultValue<T>;
+  description: string | string[];
+  notAllowedIn?: U;
+  onlyAppliesToMain?: true;
+}) => {
+  const {
+    typeName,
+    longName,
+    description,
+    defaultValue,
+    notAllowedIn,
+    onlyAppliesToMain,
+  } = arg;
+  const option: Option<T, U> = {
+    typeName,
+    longName,
+    description: typeof description === 'string' ? [description] : description,
+    defaultValue: typeof defaultValue === 'undefined' ? null : defaultValue,
+    notAllowedIn: notAllowedIn || ({} as U),
+    onlyAppliesToMain: onlyAppliesToMain || false,
+  };
+  return option;
+};
 
 export const BITCOIN_CONFIG_OPTIONS = {
   acceptnonstdtxn: createOption({
@@ -9,7 +58,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
     typeName: 'boolean',
     description: 'Relay and mine non-standard transactions',
     defaultValue: false,
-    notAllowedInMain: true,
+    notAllowedIn: {
+      main: true,
+    },
   }),
 
   addresstype: createOption({
@@ -78,8 +129,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   bind: createOption({
     longName: 'bind',
     typeName: 'string',
-    description:
+    description: [
       'Bind to given address and always listen on it. Use [host]:port notation for IPv6.',
+    ],
     onlyAppliesToMain: true,
   }),
 
@@ -93,8 +145,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   blockmintxfee: createOption({
     longName: 'block minimum transaction fee',
     typeName: 'number',
-    description:
+    description: [
       'Set lowest fee rate (in BTC/kB) for transactions to be included in block creation.',
+    ],
     defaultValue: 0.00001,
   }),
 
@@ -110,8 +163,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   blockreconstructionextratxn: createOption({
     longName: 'block reconstruction extra transactions',
     typeName: 'number',
-    description:
+    description: [
       'Number of extra transactions to keep in memory for compact block reconstructions.',
+    ],
     defaultValue: 100,
   }),
 
@@ -173,16 +227,18 @@ export const BITCOIN_CONFIG_OPTIONS = {
   checkpoints: createOption({
     longName: 'checkpoints',
     typeName: 'boolean',
-    description:
+    description: [
       'Skip verification of pre-checkpoint chain history. See related "assumevalid".',
+    ],
     defaultValue: true,
   }),
 
   connect: createOption({
     longName: 'connect',
     typeName: 'string[]',
-    description:
+    description: [
       'Connect only to the specified node(s). Set to ["0"] to disable automatic connections.',
+    ],
     onlyAppliesToMain: true,
   }),
 
@@ -224,8 +280,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   dbcache: createOption({
     longName: 'database cache',
     typeName: 'number',
-    description:
+    description: [
       'Database cache size in megabytes. Set as high as possible based upon available RAM.',
+    ],
     defaultValue: 450,
   }),
 
@@ -239,8 +296,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   dblogsize: createOption({
     longName: 'database log size',
     typeName: 'number',
-    description:
+    description: [
       'Flush wallet database activity from memory to disk log every <n> megabytes',
+    ],
     defaultValue: 100,
   }),
 
@@ -321,8 +379,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   discover: createOption({
     longName: 'discover',
     typeName: 'boolean',
-    description:
+    description: [
       'Discover own IP addresses. If disabled, should be used with -externalip or -proxy.',
+    ],
     defaultValue: true,
   }),
 
@@ -372,16 +431,18 @@ export const BITCOIN_CONFIG_OPTIONS = {
   fallbackfee: createOption({
     longName: 'fallback fee',
     typeName: 'number',
-    description:
+    description: [
       'A fee rate (in BTC/kB) that will be used when fee estimation has insufficient data',
+    ],
     defaultValue: 0.0002,
   }),
 
   feefilter: createOption({
     longName: 'fee filter',
     typeName: 'boolean',
-    description:
+    description: [
       'Tell peer nodes not to send transactions to you that pay less than your mempool min fee.',
+    ],
     defaultValue: true,
   }),
 
@@ -421,40 +482,43 @@ export const BITCOIN_CONFIG_OPTIONS = {
   keypool: createOption({
     longName: 'key pool',
     typeName: 'number',
-    description:
-      "Set key pool size to <n>. It's recommended to use a large number for high volume non-HD wallets.",
+    description: 'Set key pool size.',
     defaultValue: 1000,
   }),
 
   limitancestorcount: createOption({
     longName: 'limit ancestor count',
     typeName: 'number',
-    description:
+    description: [
       'Do not accept transactions if number of in-mempool ancestors is <n> or more.',
+    ],
     defaultValue: 25,
   }),
 
   limitancestorsize: createOption({
     longName: 'limit ancestor size',
     typeName: 'number',
-    description:
+    description: [
       'Do not accept transactions whose size with all in-mempool ancestors exceeds <n> kilobytes.',
+    ],
     defaultValue: 101,
   }),
 
   limitdescendantcount: createOption({
     longName: 'limit descendant count',
     typeName: 'number',
-    description:
+    description: [
       'Do not accept transactions if any ancestor would have <n> or more in-mempool descendants.',
+    ],
     defaultValue: 25,
   }),
 
   limitdescendantsize: createOption({
     longName: 'limit descendant size',
     typeName: 'number',
-    description:
+    description: [
       'Do not accept transactions whose size with all in-mempool descendants exceeds <n> kilobytes.',
+    ],
     defaultValue: 101,
   }),
 
@@ -554,7 +618,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   maxtipage: createOption({
     longName: 'maximum tip age',
     typeName: 'number',
-    description: 'Maximum tip age in seconds to consider node in initial block download.',
+    description: [
+      'Maximum tip age in seconds to consider node in initial block download.',
+    ],
     defaultValue: 86400,
   }),
 
@@ -571,8 +637,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   maxuploadtarget: createOption({
     longName: 'maximum upload target',
     typeName: 'number',
-    description:
+    description: [
       'Tries to keep outbound traffic under the given target in MiB per 24h. 0 means no limit.',
+    ],
     defaultValue: 0,
   }),
 
@@ -593,8 +660,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   minimumchainwork: createOption({
     longName: 'minimum chain work',
     typeName: 'string',
-    description:
+    description: [
       'The minimum amount of cumulative proof of work required as a "0x" hex string.',
+    ],
     defaultValue: '0x000000000000000000000000000000000000000000f91c579d57cad4bc5278cc',
   }),
 
@@ -611,8 +679,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   mintxfee: createOption({
     longName: 'minimum transaction fee',
     typeName: 'number',
-    description:
+    description: [
       'Fee rates (in BTC/kB) smaller than this are considered zero fee for transaction creation',
+    ],
     defaultValue: 0.00001,
   }),
 
@@ -626,8 +695,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   onion: createOption({
     longName: 'onion',
     typeName: 'string',
-    description:
+    description: [
       'Use separate SOCKS5 proxy <ip:port> to reach peers via Tor hidden services.',
+    ],
   }),
 
   onlynet: createOption({
@@ -744,8 +814,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   proxyrandomize: createOption({
     longName: 'proxy randomize',
     typeName: 'boolean',
-    description:
+    description: [
       'Randomize credentials for every proxy connection. This enables Tor stream isolation.',
+    ],
     defaultValue: true,
   }),
 
@@ -768,30 +839,37 @@ export const BITCOIN_CONFIG_OPTIONS = {
     typeName: 'boolean',
     description: 'Run this node on its own independent test network.',
     defaultValue: false,
-    onlyAllowedInTop: true,
+    notAllowedIn: {
+      main: true,
+      regtest: true,
+      test: true,
+    },
   }),
 
   reindex: createOption({
     longName: 'reindex',
     typeName: 'boolean',
-    description:
+    description: [
       'Rebuild chain state and block index from the block .dat files on disk. WARNING: very slow!',
+    ],
     defaultValue: false,
   }),
 
   'reindex-chainstate': createOption({
     longName: 'reindex chainstate',
     typeName: 'boolean',
-    description:
+    description: [
       'Reindex chain state from the currently indexed blocks. WARNING: very slow!',
+    ],
     defaultValue: false,
   }),
 
   rescan: createOption({
     longName: 'rescan',
     typeName: 'boolean',
-    description:
+    description: [
       'Rescan the blockchain for missing wallet transactions on startup. WARNING: very slow!',
+    ],
     defaultValue: false,
   }),
 
@@ -963,8 +1041,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   sysperms: createOption({
     longName: 'system permissions',
     typeName: 'boolean',
-    description:
+    description: [
       'Create new files with system default permissions. Only effective if wallet is disabled.',
+    ],
     defaultValue: false,
   }),
 
@@ -973,7 +1052,11 @@ export const BITCOIN_CONFIG_OPTIONS = {
     typeName: 'boolean',
     description: 'Run this node on the Bitcoin Test Network.',
     defaultValue: false,
-    onlyAllowedInTop: true,
+    notAllowedIn: {
+      main: true,
+      regtest: true,
+      test: true,
+    },
   }),
 
   timeout: createOption({
@@ -1009,8 +1092,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   txindex: createOption({
     longName: 'transaction index',
     typeName: 'boolean',
-    description:
+    description: [
       'Maintain a full transaction index. Used by the getrawtransaction rpc call.',
+    ],
     defaultValue: false,
   }),
 
@@ -1041,7 +1125,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
       'Use given start/end times for specified version bits deployment.',
       'Regtest mode only. Format <deployment:start:end>.',
     ],
-    notAllowedInMain: true,
+    notAllowedIn: {
+      main: true,
+    },
   }),
 
   wallet: createOption({
@@ -1087,15 +1173,18 @@ export const BITCOIN_CONFIG_OPTIONS = {
   walletrejectlongchains: createOption({
     longName: 'wallet reject long chains',
     typeName: 'boolean',
-    description: 'Wallet will not create transactions that violate mempool chain limits.',
+    description: [
+      'Wallet will not create transactions that violate mempool chain limits.',
+    ],
     defaultValue: true,
   }),
 
   whitebind: createOption({
     longName: 'whitelist bind',
     typeName: 'string',
-    description:
+    description: [
       'Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6.',
+    ],
   }),
 
   whitelist: createOption({
@@ -1112,16 +1201,18 @@ export const BITCOIN_CONFIG_OPTIONS = {
   whitelistforcerelay: createOption({
     longName: 'whitelist force relay',
     typeName: 'boolean',
-    description:
+    description: [
       'Force relay of transactions from whitelisted peers even if they violate local relay policy.',
+    ],
     defaultValue: true,
   }),
 
   whitelistrelay: createOption({
     longName: 'whitelist relay',
     typeName: 'boolean',
-    description:
+    description: [
       'Accept relayed transactions received from whitelisted peers even when not relaying transactions.',
+    ],
     defaultValue: true,
   }),
 

@@ -1,10 +1,10 @@
-import { readConfFiles, writeConfFiles } from '..';
+import { readConfigFiles, writeConfigFiles } from '..';
 import { BitcoinConfig } from '../config';
 
 describe('readConfFiles', () => {
   it('reads the specified conf file and its "includeconf" files', () => {
     const datadir = __dirname;
-    const config = readConfFiles({ datadir });
+    const config = readConfigFiles({ datadir });
     expect(config.datadir).toBe(undefined); // passed datadir does not get merged in
     expect(config.rpcuser).toBe('carnesen');
     expect(config.rpcauth).toEqual(['foo:edbb8eb$fae09e4', 'bar:b40474b$79f29e9']);
@@ -15,7 +15,7 @@ describe('readConfFiles', () => {
   });
   it('reads the specified conf file and with defaults', () => {
     const datadir = __dirname;
-    const config = readConfFiles({ datadir, withDefaults: true });
+    const config = readConfigFiles({ datadir, withDefaults: true });
     expect(config.rpcuser).toBe('carnesen');
     expect(config.rpcauth).toEqual(['foo:edbb8eb$fae09e4', 'bar:b40474b$79f29e9']);
     expect(config.rpcport).toBe(44444);
@@ -39,8 +39,8 @@ describe('writeConfFiles and readConfFiles', () => {
     };
     const datadir = __dirname;
     const options = { datadir, conf: 'tmp.conf' };
-    writeConfFiles(bitcoinConfig, options);
-    const topConfig = readConfFiles(options);
+    writeConfigFiles(bitcoinConfig, options);
+    const topConfig = readConfigFiles(options);
     expect(topConfig).toEqual(bitcoinConfig.top);
   });
 });

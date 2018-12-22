@@ -1,2 +1,3 @@
-export { readConfFiles } from './read';
-export { writeConfFiles } from './write';
+export { readConfigFiles } from './read';
+export { writeConfigFiles } from './write';
+export { BitcoinConfig } from './config';

@@ -3,7 +3,7 @@ import { BITCOIN_CONF_FILENAME, getDefaultBitcoinConfig } from './default';
 import { parseBitcoinConf } from './parse';
 import { mergeBitcoinConfigs, mergeNetworkSectionIntoTopSection } from './merge';
 import { toAbsolute } from './util';
-import { BitcoinConfig, TopSection } from './config';
+import { BitcoinConfig } from './config';
 import { dirname } from 'path';
 
 const readAndParse = (confPath: string) => {

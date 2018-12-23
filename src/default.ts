@@ -1,6 +1,5 @@
 import { join } from 'path';
 import { platform, homedir } from 'os';
-
 import { BitcoinConfig } from './config';
 import { BITCOIN_CONFIG_OPTIONS } from './options';
 

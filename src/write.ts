@@ -4,8 +4,8 @@ import { EOL } from 'os';
 import { BitcoinConfig } from './config';
 import { toAbsolute, findOption } from './util';
 import { BITCOIN_CONF_FILENAME } from './default';
-import { Value, TypeName } from './options';
-import { SECTION_NAMES } from './names';
+import { Value } from './options';
+import { SECTION_NAMES, TypeName } from './names';
 const pkg = require('../package.json');
 
 const serialize = (optionName: string, optionValue: Value<TypeName>) => {

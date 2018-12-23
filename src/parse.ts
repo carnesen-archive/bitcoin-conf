@@ -1,8 +1,7 @@
 import { mergeBitcoinConfigs } from './merge';
 import { BitcoinConfig } from './config';
 import { findOption } from './util';
-import { TypeName } from './options';
-import { castToNetworkName } from './names';
+import { castToNetworkName, TypeName } from './names';
 
 const castToValue = (typeName: TypeName) => (str: string) => {
   switch (typeName) {

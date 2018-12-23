@@ -11,7 +11,7 @@ type OptionName<S extends SectionName> = {
     : OptionName
 }[keyof Options];
 
-type Section<S extends SectionName> = Partial<
+export type Section<S extends SectionName> = Partial<
   { [K in OptionName<S>]: Value<Options[K]['typeName']> }
 >;
 

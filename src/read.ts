@@ -1,33 +1,45 @@
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { BITCOIN_CONF_FILENAME, getDefaultBitcoinConfig } from './default';
 import { parseBitcoinConf } from './parse';
-import { extractEffectiveTopSection } from './extract';
-import { mergeBitcoinConfigs } from './merge';
+import { mergeBitcoinConfigs, mergeNetworkSectionIntoTopSection } from './merge';
 import { toAbsolute } from './util';
+import { BitcoinConfig, TopSection } from './config';
+import { dirname } from 'path';
 
-const readOneConfigFile = (conf: string, datadir?: string) => {
-  const confPath = toAbsolute(conf, datadir);
+const readAndParse = (confPath: string) => {
   const fileContents = readFileSync(confPath, { encoding: 'utf8' });
   return parseBitcoinConf(fileContents);
 };
 
-type Options = Partial<{ conf: string; datadir: string; withDefaults: boolean }>;
+type ReadConfigFilesOptions = Partial<{
+  conf: string;
+  datadir: string;
+  withDefaults: boolean;
+}>;
 
-export const readConfigFiles = (options: Options = {}) => {
+export const readConfigFiles = (options: ReadConfigFilesOptions = {}) => {
   const { conf, datadir, withDefaults } = options;
-  let bitcoinConfig = readOneConfigFile(conf || BITCOIN_CONF_FILENAME, datadir);
-  // We need to extract the effective config here to know which includeconf's to read
-  const config0 = extractEffectiveTopSection(bitcoinConfig);
-  const { includeconf } = config0;
+  let bitcoinConfig: BitcoinConfig;
+  const confPath = toAbsolute(conf || BITCOIN_CONF_FILENAME, datadir);
+  try {
+    bitcoinConfig = readAndParse(confPath);
+  } catch (ex) {
+    if (ex.code === 'ENOENT' && !conf && existsSync(dirname(confPath))) {
+      throw ex;
+    }
+    bitcoinConfig = {};
+  }
+  const { includeconf } = mergeNetworkSectionIntoTopSection(bitcoinConfig);
   if (includeconf) {
-    for (const includedConf of includeconf) {
-      const includedBitcoinConfig = readOneConfigFile(includedConf, datadir);
+    for (const includeconfItem of includeconf) {
+      const includedConfPath = toAbsolute(includeconfItem, datadir);
+      const includedBitcoinConfig = readAndParse(includedConfPath);
       bitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, includedBitcoinConfig);
     }
   }
   if (withDefaults) {
     bitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, getDefaultBitcoinConfig());
   }
-  const config = extractEffectiveTopSection(bitcoinConfig);
+  const config = mergeNetworkSectionIntoTopSection(bitcoinConfig);
   return config;
 };

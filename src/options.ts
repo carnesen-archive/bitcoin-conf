@@ -1,6 +1,5 @@
-import { NetworkName } from './names';
+import { NetworkName, TypeName } from './names';
 
-export type TypeName = 'string' | 'string[]' | 'boolean' | 'number';
 export type Value<T extends TypeName> = T extends 'string'
   ? string
   : T extends 'boolean'
@@ -129,9 +128,8 @@ export const BITCOIN_CONFIG_OPTIONS = {
   bind: createOption({
     longName: 'bind',
     typeName: 'string',
-    description: [
+    description:
       'Bind to given address and always listen on it. Use [host]:port notation for IPv6.',
-    ],
     onlyAppliesToMain: true,
   }),
 
@@ -145,9 +143,8 @@ export const BITCOIN_CONFIG_OPTIONS = {
   blockmintxfee: createOption({
     longName: 'block minimum transaction fee',
     typeName: 'number',
-    description: [
+    description:
       'Set lowest fee rate (in BTC/kB) for transactions to be included in block creation.',
-    ],
     defaultValue: 0.00001,
   }),
 
@@ -163,9 +160,8 @@ export const BITCOIN_CONFIG_OPTIONS = {
   blockreconstructionextratxn: createOption({
     longName: 'block reconstruction extra transactions',
     typeName: 'number',
-    description: [
+    description:
       'Number of extra transactions to keep in memory for compact block reconstructions.',
-    ],
     defaultValue: 100,
   }),
 
@@ -236,9 +232,8 @@ export const BITCOIN_CONFIG_OPTIONS = {
   connect: createOption({
     longName: 'connect',
     typeName: 'string[]',
-    description: [
+    description:
       'Connect only to the specified node(s). Set to ["0"] to disable automatic connections.',
-    ],
     onlyAppliesToMain: true,
   }),
 
@@ -280,9 +275,8 @@ export const BITCOIN_CONFIG_OPTIONS = {
   dbcache: createOption({
     longName: 'database cache',
     typeName: 'number',
-    description: [
+    description:
       'Database cache size in megabytes. Set as high as possible based upon available RAM.',
-    ],
     defaultValue: 450,
   }),
 
@@ -379,9 +373,8 @@ export const BITCOIN_CONFIG_OPTIONS = {
   discover: createOption({
     longName: 'discover',
     typeName: 'boolean',
-    description: [
+    description:
       'Discover own IP addresses. If disabled, should be used with -externalip or -proxy.',
-    ],
     defaultValue: true,
   }),
 
@@ -431,9 +424,8 @@ export const BITCOIN_CONFIG_OPTIONS = {
   fallbackfee: createOption({
     longName: 'fallback fee',
     typeName: 'number',
-    description: [
+    description:
       'A fee rate (in BTC/kB) that will be used when fee estimation has insufficient data',
-    ],
     defaultValue: 0.0002,
   }),
 
@@ -1182,9 +1174,8 @@ export const BITCOIN_CONFIG_OPTIONS = {
   whitebind: createOption({
     longName: 'whitelist bind',
     typeName: 'string',
-    description: [
+    description:
       'Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6.',
-    ],
   }),
 
   whitelist: createOption({
@@ -1201,18 +1192,16 @@ export const BITCOIN_CONFIG_OPTIONS = {
   whitelistforcerelay: createOption({
     longName: 'whitelist force relay',
     typeName: 'boolean',
-    description: [
+    description:
       'Force relay of transactions from whitelisted peers even if they violate local relay policy.',
-    ],
     defaultValue: true,
   }),
 
   whitelistrelay: createOption({
     longName: 'whitelist relay',
     typeName: 'boolean',
-    description: [
+    description:
       'Accept relayed transactions received from whitelisted peers even when not relaying transactions.',
-    ],
     defaultValue: true,
   }),
 

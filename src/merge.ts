@@ -1,21 +1,15 @@
-import {
-  BitcoinConfig,
-  TopSection,
-  MainSection,
-  TestSection,
-  RegtestSection,
-} from './config';
-import { SECTION_NAMES } from './names';
-
-type AnySection = TopSection | MainSection | RegtestSection | TestSection;
+import { BitcoinConfig, TopSection, Section } from './config';
+import { SECTION_NAMES, NetworkName, SectionName } from './names';
+import { BITCOIN_CONFIG_OPTIONS } from './options';
 
 // For single-valued options, the first value takes precedence.
 // Options with value undefined are not copied into the merged config.
 // Arrays are merged with config0 values coming first.
-function mergeSections(section0: TopSection, section1: AnySection): TopSection;
-function mergeSections<T extends AnySection>(section0: T, section1: T): T;
-function mergeSections(section0: AnySection, section1: AnySection) {
-  const mergedConfig: AnySection = {};
+const mergeSections = <S0 extends SectionName, S1 extends SectionName>(
+  section0: Section<S0>,
+  section1: Section<S1>,
+) => {
+  const mergedConfig: Section<S0 | S1> = {};
   const optionNames0 = Object.keys(section0);
   const optionNames1 = Object.keys(section1);
   const uniqueOptionNames = new Set([...optionNames0, ...optionNames1]);
@@ -33,9 +27,9 @@ function mergeSections(section0: AnySection, section1: AnySection) {
     }
   }
   return mergedConfig;
-}
+};
 
-const mergeBitcoinConfigs = (
+export const mergeBitcoinConfigs = (
   bitcoinConfig0: BitcoinConfig,
   bitcoinConfig1: BitcoinConfig,
 ) => {
@@ -52,4 +46,32 @@ const mergeBitcoinConfigs = (
   return mergedBitcoinConfig;
 };
 
-export { mergeBitcoinConfigs, mergeSections as mergeSectionConfigs };
+export const mergeNetworkSectionIntoTopSection = (bitcoinConfig: BitcoinConfig) => {
+  const topSection: TopSection = bitcoinConfig.top || {};
+
+  let networkName: NetworkName = 'main';
+  if (topSection.regtest && topSection.testnet) {
+    throw new Error('regtest and testnet cannot both be set to true');
+  }
+  if (topSection.regtest) {
+    networkName = 'regtest';
+  } else if (topSection.testnet) {
+    networkName = 'test';
+  }
+
+  if (networkName !== 'main') {
+    for (const [optionName, option] of Object.entries(BITCOIN_CONFIG_OPTIONS)) {
+      if (option.onlyAppliesToMain) {
+        delete (topSection as any)[optionName];
+      }
+    }
+  }
+
+  // (erroneously?) does not include undefined in its type
+  const networkSection = bitcoinConfig[networkName]!;
+  if (!networkSection) {
+    return topSection;
+  }
+  const mergedTopSection: TopSection = mergeSections(topSection, networkSection);
+  return mergedTopSection;
+};

@@ -1,7 +1,6 @@
 ### Node ###
 
-# Written by unit tests
-tmp.conf
+/coverage
 
 # Logs
 logs

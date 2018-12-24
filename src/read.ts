@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { BITCOIN_CONF_FILENAME, getDefaultBitcoinConfig } from './default';
 import { parseBitcoinConf } from './parse';
-import { mergeBitcoinConfigs, mergeNetworkSectionIntoTopSection } from './merge';
+import { mergeBitcoinConfigs, mergeNetworkIntoTop } from './merge';
 import { toAbsolute } from './util';
 import { BitcoinConfig } from './config';
 import { dirname } from 'path';
@@ -25,11 +25,12 @@ export const readConfigFiles = (options: ReadConfigFilesOptions = {}) => {
     bitcoinConfig = readAndParse(confPath);
   } catch (ex) {
     if (ex.code === 'ENOENT' && !conf && existsSync(dirname(confPath))) {
+      bitcoinConfig = {};
+    } else {
       throw ex;
     }
-    bitcoinConfig = {};
   }
-  const { includeconf } = mergeNetworkSectionIntoTopSection(bitcoinConfig);
+  const { includeconf } = mergeNetworkIntoTop(bitcoinConfig);
   if (includeconf) {
     for (const includeconfItem of includeconf) {
       const includedConfPath = toAbsolute(includeconfItem, datadir);
@@ -40,6 +41,11 @@ export const readConfigFiles = (options: ReadConfigFilesOptions = {}) => {
   if (withDefaults) {
     bitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, getDefaultBitcoinConfig());
   }
-  const config = mergeNetworkSectionIntoTopSection(bitcoinConfig);
+  const config = mergeNetworkIntoTop(bitcoinConfig);
+  if (config.includeconf !== includeconf) {
+    throw new Error(
+      "Included conf files are not allowed to have includeconf's themselves",
+    );
+  }
   return config;
 };

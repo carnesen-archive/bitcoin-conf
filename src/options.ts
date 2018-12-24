@@ -6,12 +6,7 @@ export type Value<T extends TypeName> = T extends 'string'
     ? boolean
     : T extends 'number' ? number : T extends 'string[]' ? string[] : never;
 
-type NotAllowedIn = Partial<{
-  top: true;
-  main: true;
-  regtest: true;
-  test: true;
-}>;
+type NotAllowedIn = Partial<{ [K in NetworkName]: true }>;
 
 type DefaultValue<T extends TypeName> = Value<T> | { [K in NetworkName]: Value<T> };
 
@@ -50,6 +45,15 @@ export const createOption = <T extends TypeName, U extends NotAllowedIn>(arg: {
   };
   return option;
 };
+
+export const UNKNOWN_OPTION = createOption({
+  longName: 'unknown option',
+  typeName: 'string',
+  description: [
+    'This is an option name that this program does not know about.',
+    'It will be treated as a single-valued string.',
+  ],
+});
 
 export const BITCOIN_CONFIG_OPTIONS = {
   acceptnonstdtxn: createOption({

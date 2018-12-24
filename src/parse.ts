@@ -39,10 +39,10 @@ const createParseLine = (context: keyof BitcoinConfig) => (
     if (indexOfDot > -1) {
       // context === 'top' && indexOfDot > -1
       const maybeSectionName = lhs.slice(0, indexOfDot);
-      const sectionName = castToNetworkName(maybeSectionName);
+      const networkName = castToNetworkName(maybeSectionName);
       const maybeOptionName = lhs.slice(indexOfDot + 1);
-      const { optionName, option } = findOption(maybeOptionName);
-      return { [sectionName]: { [optionName]: castToValue(option.typeName)(rhs) } };
+      const { optionName, option } = findOption(maybeOptionName, networkName);
+      return { [networkName]: { [optionName]: castToValue(option.typeName)(rhs) } };
     }
     // context === 'top' && indexOfDot === -1
     const maybeOptionName = lhs;
@@ -52,8 +52,11 @@ const createParseLine = (context: keyof BitcoinConfig) => (
     };
   }
   // sectionName !== 'top'
+  if (lhs.indexOf('.') > -1) {
+    throw new Error('Dot notation is only allowed in top section');
+  }
   const maybeOptionName = lhs;
-  const { optionName, option } = findOption(maybeOptionName);
+  const { optionName, option } = findOption(maybeOptionName, context);
   return {
     [context]: { [optionName]: castToValue(option.typeName)(rhs) },
   };
@@ -71,6 +74,9 @@ export const parseBitcoinConf = (str: string) => {
       const indexOfPoundSign = line.indexOf('#');
       if (indexOfPoundSign > -1) {
         line = line.slice(0, indexOfPoundSign);
+        if (line.includes('rpcpassword')) {
+          throw new Error('rpcpassword option line cannot have comments');
+        }
       }
 
       // Trim whitespace

@@ -10,10 +10,7 @@ export const getDefaultDatadir = (p = platform()) => {
     case 'darwin':
       return join(homedir(), 'Library', 'Application Support', 'Bitcoin');
     case 'win32':
-      if (!process.env.APPDATA) {
-        throw new Error('Expected to find environment variable "APPDATA"');
-      }
-      return join(process.env.APPDATA, 'Bitcoin');
+      return join(process.env.APPDATA!, 'Bitcoin');
     default:
       return join(homedir(), '.bitcoin');
   }

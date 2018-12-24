@@ -1,32 +1,32 @@
-import { BitcoinConfig, TopSection, Section } from './config';
+import { BitcoinConfig, TopSectionConfig, SectionConfig } from './config';
 import { SECTION_NAMES, NetworkName, SectionName } from './names';
 import { BITCOIN_CONFIG_OPTIONS } from './options';
 
 // For single-valued options, the first value takes precedence.
 // Options with value undefined are not copied into the merged config.
 // Arrays are merged with config0 values coming first.
-const mergeSections = <S0 extends SectionName, S1 extends SectionName>(
-  section0: Section<S0>,
-  section1: Section<S1>,
+const mergeSectionConfigs = <S0 extends SectionName, S1 extends SectionName>(
+  sectionConfig0: SectionConfig<S0>,
+  sectionConfig1: SectionConfig<S1>,
 ) => {
-  const mergedConfig: Section<S0 | S1> = {};
-  const optionNames0 = Object.keys(section0);
-  const optionNames1 = Object.keys(section1);
+  const mergedSectionConfig: SectionConfig<S0 | S1> = {};
+  const optionNames0 = Object.keys(sectionConfig0);
+  const optionNames1 = Object.keys(sectionConfig1);
   const uniqueOptionNames = new Set([...optionNames0, ...optionNames1]);
   for (const optionName of uniqueOptionNames) {
-    const value0 = (section0 as any)[optionName];
-    const value1 = (section1 as any)[optionName];
+    const value0 = (sectionConfig0 as any)[optionName];
+    const value1 = (sectionConfig1 as any)[optionName];
     if (value0 != null) {
       if (Array.isArray(value0) && Array.isArray(value1)) {
-        (mergedConfig as any)[optionName] = [...value0, ...value1];
+        (mergedSectionConfig as any)[optionName] = [...value0, ...value1];
       } else {
-        (mergedConfig as any)[optionName] = value0;
+        (mergedSectionConfig as any)[optionName] = value0;
       }
     } else if (value1 != null) {
-      (mergedConfig as any)[optionName] = value1;
+      (mergedSectionConfig as any)[optionName] = value1;
     }
   }
-  return mergedConfig;
+  return mergedSectionConfig;
 };
 
 export const mergeBitcoinConfigs = (
@@ -38,7 +38,7 @@ export const mergeBitcoinConfigs = (
     const config0 = bitcoinConfig0[key];
     const config1 = bitcoinConfig1[key];
     if (config0 && config1) {
-      mergedBitcoinConfig[key] = mergeSections(config0, config1);
+      mergedBitcoinConfig[key] = mergeSectionConfigs(config0, config1);
     } else if (config0 || config1) {
       mergedBitcoinConfig[key] = config0 || config1;
     }
@@ -46,8 +46,8 @@ export const mergeBitcoinConfigs = (
   return mergedBitcoinConfig;
 };
 
-export const mergeNetworkSectionIntoTopSection = (bitcoinConfig: BitcoinConfig) => {
-  const topSection: TopSection = bitcoinConfig.top || {};
+export const mergeNetworkIntoTop = (bitcoinConfig: BitcoinConfig) => {
+  const topSection: TopSectionConfig = bitcoinConfig.top || {};
 
   let networkName: NetworkName = 'main';
   if (topSection.regtest && topSection.testnet) {
@@ -72,6 +72,9 @@ export const mergeNetworkSectionIntoTopSection = (bitcoinConfig: BitcoinConfig) 
   if (!networkSection) {
     return topSection;
   }
-  const mergedTopSection: TopSection = mergeSections(topSection, networkSection);
+  const mergedTopSection: TopSectionConfig = mergeSectionConfigs(
+    topSection,
+    networkSection,
+  );
   return mergedTopSection;
 };

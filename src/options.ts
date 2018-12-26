@@ -1,4 +1,4 @@
-import { NetworkName, TypeName } from './names';
+import { SectionName, TypeName } from './names';
 
 export type Value<T extends TypeName> = T extends 'string'
   ? string
@@ -6,45 +6,22 @@ export type Value<T extends TypeName> = T extends 'string'
     ? boolean
     : T extends 'number' ? number : T extends 'string[]' ? string[] : never;
 
-type NotAllowedIn = Partial<{ [K in NetworkName]: true }>;
+type NotAllowedIn = { [K in SectionName]?: true };
 
-type DefaultValue<T extends TypeName> = Value<T> | { [K in NetworkName]: Value<T> };
+type DefaultValue<T extends TypeName> = Value<T> | { [K in SectionName]: Value<T> };
 
 export type Option<T extends TypeName, U extends NotAllowedIn> = {
   typeName: T;
-  longName: string;
-  defaultValue: DefaultValue<T> | null;
   description: string[];
-  notAllowedIn: U;
-  onlyAppliesToMain: boolean;
-};
-
-export const createOption = <T extends TypeName, U extends NotAllowedIn>(arg: {
-  typeName: T;
   longName: string;
   defaultValue?: DefaultValue<T>;
-  description: string | string[];
   notAllowedIn?: U;
-  onlyAppliesToMain?: true;
-}) => {
-  const {
-    typeName,
-    longName,
-    description,
-    defaultValue,
-    notAllowedIn,
-    onlyAppliesToMain,
-  } = arg;
-  const option: Option<T, U> = {
-    typeName,
-    longName,
-    description: typeof description === 'string' ? [description] : description,
-    defaultValue: typeof defaultValue === 'undefined' ? null : defaultValue,
-    notAllowedIn: notAllowedIn || ({} as U),
-    onlyAppliesToMain: onlyAppliesToMain || false,
-  };
-  return option;
+  onlyAppliesToMain?: boolean;
 };
+
+export const createOption = <T extends TypeName, U extends NotAllowedIn>(
+  option: Option<T, U>,
+) => option;
 
 export const UNKNOWN_OPTION = createOption({
   longName: 'unknown option',
@@ -59,7 +36,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   acceptnonstdtxn: createOption({
     longName: 'accept non-standard transactions',
     typeName: 'boolean',
-    description: 'Relay and mine non-standard transactions',
+    description: ['Relay and mine non-standard transactions'],
     defaultValue: false,
     notAllowedIn: {
       main: true,
@@ -69,21 +46,21 @@ export const BITCOIN_CONFIG_OPTIONS = {
   addresstype: createOption({
     longName: 'address type',
     typeName: 'string',
-    description: 'p2sh-segwit, legacy, or bech32',
+    description: ['p2sh-segwit, legacy, or bech32'],
     defaultValue: 'p2sh-segwit',
   }),
 
   addnode: createOption({
     longName: 'add node',
     typeName: 'string[]',
-    description: 'Add a node IP address to attempt to connect to',
+    description: ['Add a node IP address to attempt to connect to'],
     onlyAppliesToMain: true,
   }),
 
   addrmantest: createOption({
     longName: 'address manager test',
     typeName: 'boolean',
-    description: 'allows you to test address relay locally',
+    description: ['allows you to test address relay locally'],
   }),
 
   alertnotify: createOption({
@@ -118,37 +95,39 @@ export const BITCOIN_CONFIG_OPTIONS = {
   banscore: createOption({
     longName: 'ban score',
     typeName: 'number',
-    description: 'Threshold for disconnecting misbehaving peers.',
+    description: ['Threshold for disconnecting misbehaving peers.'],
     defaultValue: 100,
   }),
 
   bantime: createOption({
     longName: 'ban time',
     typeName: 'number',
-    description: 'Number of seconds to keep misbehaving peers from reconnecting.',
+    description: ['Number of seconds to keep misbehaving peers from reconnecting.'],
     defaultValue: 86400,
   }),
 
   bind: createOption({
     longName: 'bind',
     typeName: 'string',
-    description:
+    description: [
       'Bind to given address and always listen on it. Use [host]:port notation for IPv6.',
+    ],
     onlyAppliesToMain: true,
   }),
 
   blockmaxweight: createOption({
     longName: 'block maximum weight',
     typeName: 'number',
-    description: 'Set maximum BIP141 block weight.',
+    description: ['Set maximum BIP141 block weight.'],
     defaultValue: 3000000,
   }),
 
   blockmintxfee: createOption({
     longName: 'block minimum transaction fee',
     typeName: 'number',
-    description:
+    description: [
       'Set lowest fee rate (in BTC/kB) for transactions to be included in block creation.',
+    ],
     defaultValue: 0.00001,
   }),
 
@@ -164,63 +143,64 @@ export const BITCOIN_CONFIG_OPTIONS = {
   blockreconstructionextratxn: createOption({
     longName: 'block reconstruction extra transactions',
     typeName: 'number',
-    description:
+    description: [
       'Number of extra transactions to keep in memory for compact block reconstructions.',
+    ],
     defaultValue: 100,
   }),
 
   blocksdir: createOption({
     longName: 'blocks directions',
     typeName: 'string',
-    description: 'Specify a non-default path to store blockchain data.',
+    description: ['Specify a non-default path to store blockchain data.'],
     defaultValue: 'blocks',
   }),
 
   blocksonly: createOption({
     longName: 'blocks only',
     typeName: 'boolean',
-    description: 'Only download and relay blocks. Ignore unconfirmed transactions.',
+    description: ['Only download and relay blocks. Ignore unconfirmed transactions.'],
     defaultValue: false,
   }),
 
   blockversion: createOption({
     longName: 'blocks version',
     typeName: 'number',
-    description: 'Override block version to test forking scenarios.',
+    description: ['Override block version to test forking scenarios.'],
   }),
 
   bytespersigop: createOption({
     longName: 'bytes per sigop',
     typeName: 'number',
-    description: 'Equivalent bytes per sigop in transactions for relay and mining.',
+    description: ['Equivalent bytes per sigop in transactions for relay and mining.'],
     defaultValue: 20,
   }),
 
   changetype: createOption({
     longName: 'change type',
     typeName: 'string',
-    description: 'Change address type: legacy, p2sh-segwit, or bech32.',
+    description: ['Change address type: legacy, p2sh-segwit, or bech32.'],
     defaultValue: 'p2sh-segwit',
   }),
 
   checkblocks: createOption({
     longName: 'check blocks',
     typeName: 'number',
-    description: 'Number of recent blocks to check at startup.',
+    description: ['Number of recent blocks to check at startup.'],
     defaultValue: 6,
   }),
 
   checklevel: createOption({
     longName: 'check level',
     typeName: 'number',
-    description: 'How thorough the block verification of -checkblocks is (0-4).',
+    description: ['How thorough the block verification of -checkblocks is (0-4).'],
     defaultValue: 3,
   }),
 
   checkmempool: createOption({
     longName: 'check mempool',
     typeName: 'number',
-    description: 'Run a sanity checks on the mempool every <n> transactions.',
+    description: ['Run a sanity checks on the mempool every <n> transactions.'],
     defaultValue: 0,
   }),
 
@@ -236,58 +216,60 @@ export const BITCOIN_CONFIG_OPTIONS = {
   connect: createOption({
     longName: 'connect',
     typeName: 'string[]',
-    description:
+    description: [
       'Connect only to the specified node(s). Set to ["0"] to disable automatic connections.',
+    ],
     onlyAppliesToMain: true,
   }),
 
   daemon: createOption({
     longName: 'daemon',
     typeName: 'boolean',
-    description: 'Run in the background as a daemon and accept commands.',
+    description: ['Run in the background as a daemon and accept commands.'],
     defaultValue: true,
   }),
 
   datacarrier: createOption({
     longName: 'data carrier',
     typeName: 'boolean',
-    description: 'Relay transactions with OP_RETURN outputs.',
+    description: ['Relay transactions with OP_RETURN outputs.'],
     defaultValue: true,
   }),
 
   datacarriersize: createOption({
     longName: 'data carrier size',
     typeName: 'number',
-    description: 'Maximum size of data in OP_RETURN outputs we relay and mine.',
+    description: ['Maximum size of data in OP_RETURN outputs we relay and mine.'],
     defaultValue: 83,
   }),
 
   datadir: createOption({
     longName: 'data directory',
     typeName: 'string',
-    description: 'Specify a non-default location to store blockchain and other data.',
+    description: ['Specify a non-default location to store blockchain and other data.'],
     defaultValue: 'platform-dependent',
   }),
 
   dbbatchsize: createOption({
     longName: 'database batch size',
     typeName: 'number',
-    description: 'Maximum database write batch size in bytes.',
+    description: ['Maximum database write batch size in bytes.'],
     defaultValue: 16777216,
   }),
 
   dbcache: createOption({
     longName: 'database cache',
     typeName: 'number',
-    description:
+    description: [
       'Database cache size in megabytes. Set as high as possible based upon available RAM.',
+    ],
     defaultValue: 450,
   }),
 
   dbcrashratio: createOption({
     longName: 'database crash ratio',
     typeName: 'number',
-    description: 'Randomly crash while writing data at a given rate between 0 and 1.',
+    description: ['Randomly crash while writing data at a given rate between 0 and 1.'],
     defaultValue: 0,
   }),
 
@@ -334,13 +316,13 @@ export const BITCOIN_CONFIG_OPTIONS = {
   debugexclude: createOption({
     longName: 'debug exclude',
     typeName: 'string[]',
-    description: 'Disable debugging for a feature',
+    description: ['Disable debugging for a feature'],
   }),
 
   debuglogfile: createOption({
     longName: 'debug log file',
     typeName: 'string',
-    description: 'Location of the debug log',
+    description: ['Location of the debug log'],
     defaultValue: 'debug.log',
   }),
 
@@ -360,7 +342,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   disablewallet: createOption({
     longName: 'disable wallet',
     typeName: 'boolean',
-    description: 'Do not load the wallet and disable wallet RPC calls.',
+    description: ['Do not load the wallet and disable wallet RPC calls.'],
     defaultValue: false,
   }),
 
@@ -377,29 +359,30 @@ export const BITCOIN_CONFIG_OPTIONS = {
   discover: createOption({
     longName: 'discover',
     typeName: 'boolean',
-    description:
+    description: [
       'Discover own IP addresses. If disabled, should be used with -externalip or -proxy.',
+    ],
     defaultValue: true,
   }),
 
   dns: createOption({
     longName: 'dns',
     typeName: 'boolean',
-    description: 'Allow DNS lookups for -addnode, -seednode and -connect values.',
+    description: ['Allow DNS lookups for -addnode, -seednode and -connect values.'],
     defaultValue: true,
   }),
 
   dnsseed: createOption({
     longName: 'dns seed',
     typeName: 'boolean',
-    description: 'Query for peer addresses via DNS lookup if low on addresses.',
+    description: ['Query for peer addresses via DNS lookup if low on addresses.'],
     defaultValue: true,
   }),
 
   dropmessagestest: createOption({
     longName: 'drop messages test',
     typeName: 'number',
-    description: 'Randomly drop 1 of every <n> network messages.',
+    description: ['Randomly drop 1 of every <n> network messages.'],
   }),
 
   dustrelayfee: createOption({
@@ -415,21 +398,22 @@ export const BITCOIN_CONFIG_OPTIONS = {
   enablebip61: createOption({
     longName: 'enable bip61',
     typeName: 'boolean',
-    description: 'Send reject messages per BIP61.',
+    description: ['Send reject messages per BIP61.'],
     defaultValue: false,
   }),
 
   externalip: createOption({
     longName: 'external ip',
     typeName: 'string',
-    description: 'Specify your own public IP address.',
+    description: ['Specify your own public IP address.'],
   }),
 
   fallbackfee: createOption({
     longName: 'fallback fee',
     typeName: 'number',
-    description:
+    description: [
       'A fee rate (in BTC/kB) that will be used when fee estimation has insufficient data',
+    ],
     defaultValue: 0.0002,
   }),
 
@@ -445,14 +429,14 @@ export const BITCOIN_CONFIG_OPTIONS = {
   flushwallet: createOption({
     longName: 'flush wallet',
     typeName: 'boolean',
-    description: 'Run a thread to flush wallet periodically.',
+    description: ['Run a thread to flush wallet periodically.'],
     defaultValue: true,
   }),
 
   forcednsseed: createOption({
     longName: 'force dns seed',
     typeName: 'boolean',
-    description: 'Always query for peer addresses via DNS lookup.',
+    description: ['Always query for peer addresses via DNS lookup.'],
     defaultValue: false,
   }),
 
@@ -478,7 +462,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   keypool: createOption({
     longName: 'key pool',
     typeName: 'number',
-    description: 'Set key pool size.',
+    description: ['Set key pool size.'],
     defaultValue: 1000,
   }),
 
@@ -521,83 +505,83 @@ export const BITCOIN_CONFIG_OPTIONS = {
   listen: createOption({
     longName: 'listen',
     typeName: 'boolean',
-    description: 'Accept incoming connections from peers.',
+    description: ['Accept incoming connections from peers.'],
     defaultValue: true,
   }),
 
   listenonion: createOption({
     longName: 'listen onion',
     typeName: 'boolean',
-    description: 'Automatically create Tor hidden service.',
+    description: ['Automatically create Tor hidden service.'],
     defaultValue: true,
   }),
 
   loadblock: createOption({
     longName: 'load block',
     typeName: 'string[]',
-    description: 'Import blocks from external ".dat" file on startup.',
+    description: ['Import blocks from external ".dat" file on startup.'],
   }),
 
   logips: createOption({
     longName: 'log ips',
     typeName: 'boolean',
-    description: 'Log IP Addresses in debug output.',
+    description: ['Log IP Addresses in debug output.'],
     defaultValue: false,
   }),
 
   logtimemicros: createOption({
     longName: 'log timestamps in microseconds',
     typeName: 'boolean',
-    description: 'Log timestamps with microsecond precision.',
+    description: ['Log timestamps with microsecond precision.'],
     defaultValue: false,
   }),
 
   logtimestamps: createOption({
     longName: 'log timestamps',
     typeName: 'boolean',
-    description: 'Log timestamps in debug output.',
+    description: ['Log timestamps in debug output.'],
     defaultValue: true,
   }),
 
   maxconnections: createOption({
     longName: 'maximum connections',
     typeName: 'number',
-    description: 'Maintain at most this many connections to peers.',
+    description: ['Maintain at most this many connections to peers.'],
     defaultValue: 125,
   }),
 
   maxmempool: createOption({
     longName: 'maximum mempool',
     typeName: 'number',
-    description: 'Maximum allowed size of the mempool in megabytes.',
+    description: ['Maximum allowed size of the mempool in megabytes.'],
     defaultValue: 300,
   }),
 
   maxorphantx: createOption({
     longName: 'maximum orphan transactions',
     typeName: 'number',
-    description: 'Keep at most this many orphan transactions in memory.',
+    description: ['Keep at most this many orphan transactions in memory.'],
     defaultValue: 100,
   }),
 
   maxreceivebuffer: createOption({
     longName: 'maximum receive buffer',
     typeName: 'number',
-    description: 'Maximum per-connection receive buffer size in KiB.',
+    description: ['Maximum per-connection receive buffer size in KiB.'],
     defaultValue: 5000,
   }),
 
   maxsendbuffer: createOption({
     longName: 'maximum send buffer',
     typeName: 'number',
-    description: 'Maximum per-connection send buffer size in KiB.',
+    description: ['Maximum per-connection send buffer size in KiB.'],
     defaultValue: 1000,
   }),
 
   maxsigcachesize: createOption({
     longName: 'maximum signature cache size',
     typeName: 'number',
-    description: 'Limit size of signature cache to this many MiB.',
+    description: ['Limit size of signature cache to this many MiB.'],
     defaultValue: 32,
   }),
 
@@ -642,14 +626,14 @@ export const BITCOIN_CONFIG_OPTIONS = {
   mempoolexpiry: createOption({
     longName: 'mempool expiry',
     typeName: 'number',
-    description: 'Do not keep transactions in the mempool longer than this many hours.',
+    description: ['Do not keep transactions in the mempool longer than this many hours.'],
     defaultValue: 336,
   }),
 
   mempoolreplacement: createOption({
     longName: 'mempool replacement',
     typeName: 'boolean',
-    description: 'Allow transaction replacement in the memory pool.',
+    description: ['Allow transaction replacement in the memory pool.'],
     defaultValue: true,
   }),
 
@@ -684,7 +668,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   mocktime: createOption({
     longName: 'mock time',
     typeName: 'boolean',
-    description: 'Replace actual UNIX time with this value.',
+    description: ['Replace actual UNIX time with this value.'],
     defaultValue: false,
   }),
 
@@ -734,35 +718,35 @@ export const BITCOIN_CONFIG_OPTIONS = {
   peerbloomfilters: createOption({
     longName: 'peer bloom filters',
     typeName: 'boolean',
-    description: 'Support filtering of blocks and transactions with bloom filters.',
+    description: ['Support filtering of blocks and transactions with bloom filters.'],
     defaultValue: true,
   }),
 
   permitbaremultisig: createOption({
     longName: 'permit bare multisig',
     typeName: 'boolean',
-    description: 'Relay non-P2SH multisig transactions.',
+    description: ['Relay non-P2SH multisig transactions.'],
     defaultValue: true,
   }),
 
   persistmempool: createOption({
     longName: 'persist mempool',
     typeName: 'boolean',
-    description: 'Save the mempool on shutdown and load on restart.',
+    description: ['Save the mempool on shutdown and load on restart.'],
     defaultValue: true,
   }),
 
   pid: createOption({
     longName: 'pid',
     typeName: 'string',
-    description: 'Specify process ID file name. Ignored on Windows.',
+    description: ['Specify process ID file name. Ignored on Windows.'],
     defaultValue: 'bitcoind.pid',
   }),
 
   port: createOption({
     longName: 'port',
     typeName: 'number',
-    description: 'Listen for incoming connections on the specified port number.',
+    description: ['Listen for incoming connections on the specified port number.'],
     defaultValue: {
       main: 8333,
       test: 18333,
@@ -774,21 +758,21 @@ export const BITCOIN_CONFIG_OPTIONS = {
   printpriority: createOption({
     longName: 'print priority',
     typeName: 'boolean',
-    description: 'Log transaction fee per kB when mining blocks.',
+    description: ['Log transaction fee per kB when mining blocks.'],
     defaultValue: false,
   }),
 
   printtoconsole: createOption({
     longName: 'print to console',
     typeName: 'boolean',
-    description: 'Send trace/debug info to console instead of debug.log.',
+    description: ['Send trace/debug info to console instead of debug.log.'],
     defaultValue: false,
   }),
 
   privdb: createOption({
     longName: 'private database',
     typeName: 'boolean',
-    description: 'Set the DB_PRIVATE flag in the wallet database environment.',
+    description: ['Set the DB_PRIVATE flag in the wallet database environment.'],
     defaultValue: true,
   }),
 
@@ -804,7 +788,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   proxy: createOption({
     longName: 'proxy',
     typeName: 'string',
-    description: 'Connect through <ip:port> SOCKS5 proxy.',
+    description: ['Connect through <ip:port> SOCKS5 proxy.'],
   }),
 
   proxyrandomize: createOption({
@@ -833,7 +817,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   regtest: createOption({
     longName: 'regtest',
     typeName: 'boolean',
-    description: 'Run this node on its own independent test network.',
+    description: ['Run this node on its own independent test network.'],
     defaultValue: false,
     notAllowedIn: {
       main: true,
@@ -872,7 +856,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   rest: createOption({
     longName: 'rest',
     typeName: 'boolean',
-    description: 'Accept public REST requests.',
+    description: ['Accept public REST requests.'],
     defaultValue: false,
   }),
 
@@ -924,7 +908,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   rpccookiefile: createOption({
     longName: 'rpc cookie file',
     typeName: 'string',
-    description: 'Location of the RPC auth cookie',
+    description: ['Location of the RPC auth cookie'],
     defaultValue: '.cookie',
   }),
 
@@ -940,7 +924,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   rpcport: createOption({
     longName: 'rpc port',
     typeName: 'number',
-    description: 'Listen for JSON-RPC connections on this port.',
+    description: ['Listen for JSON-RPC connections on this port.'],
     onlyAppliesToMain: true,
     defaultValue: {
       main: 8332,
@@ -962,75 +946,75 @@ export const BITCOIN_CONFIG_OPTIONS = {
   rpcservertimeout: createOption({
     longName: 'rpc server timeout',
     typeName: 'number',
-    description: 'Number of seconds after which an uncompleted RPC call will time out',
+    description: ['Number of seconds after which an uncompleted RPC call will time out'],
     defaultValue: 30,
   }),
 
   rpcthreads: createOption({
     longName: 'rpc threads',
     typeName: 'number',
-    description: 'Number of threads for handling RPC calls.',
+    description: ['Number of threads for handling RPC calls.'],
     defaultValue: 4,
   }),
 
   rpcuser: createOption({
     longName: 'rpc user',
     typeName: 'string',
-    description: 'Specify username for RPC http basic authentication',
+    description: ['Specify username for RPC http basic authentication'],
   }),
 
   rpcworkqueue: createOption({
     longName: 'rpc work queue',
     typeName: 'number',
-    description: 'Set the depth of the work queue to service RPC calls',
+    description: ['Set the depth of the work queue to service RPC calls'],
     defaultValue: 16,
   }),
 
   salvagewallet: createOption({
     longName: 'salvage wallet',
     typeName: 'boolean',
-    description: 'Attempt to recover private keys from a corrupt wallet on startup.',
+    description: ['Attempt to recover private keys from a corrupt wallet on startup.'],
     defaultValue: false,
   }),
 
   seednode: createOption({
     longName: 'seed node',
     typeName: 'string',
-    description: 'Connect to the specified IP address to retrieve peer addresses.',
+    description: ['Connect to the specified IP address to retrieve peer addresses.'],
   }),
 
   server: createOption({
     longName: 'server',
     typeName: 'boolean',
-    description: 'Accept command line and JSON-RPC commands.',
+    description: ['Accept command line and JSON-RPC commands.'],
     defaultValue: false,
   }),
 
   shrinkdebugfile: createOption({
     longName: 'shrink debug file',
     typeName: 'boolean',
-    description: 'Shrink debug.log file on startup.',
+    description: ['Shrink debug.log file on startup.'],
     defaultValue: true,
   }),
 
   spendzeroconfchange: createOption({
     longName: 'spend zero-confirmation change',
     typeName: 'boolean',
-    description: 'Spend unconfirmed change when sending transactions.',
+    description: ['Spend unconfirmed change when sending transactions.'],
     defaultValue: true,
   }),
 
   stopafterblockimport: createOption({
     longName: 'stop after block import',
     typeName: 'boolean',
-    description: 'Stop running after importing blocks from disk.',
+    description: ['Stop running after importing blocks from disk.'],
     defaultValue: false,
   }),
 
   stopatheight: createOption({
     longName: 'stop at height',
     typeName: 'number',
-    description: 'Stop running after reaching the given height in the main chain.',
+    description: ['Stop running after reaching the given height in the main chain.'],
     defaultValue: 0,
   }),
 
@@ -1046,7 +1030,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   testnet: createOption({
     longName: 'testnet',
     typeName: 'boolean',
-    description: 'Run this node on the Bitcoin Test Network.',
+    description: ['Run this node on the Bitcoin Test Network.'],
     defaultValue: false,
     notAllowedIn: {
       main: true,
@@ -1058,21 +1042,21 @@ export const BITCOIN_CONFIG_OPTIONS = {
   timeout: createOption({
     longName: 'timeout',
     typeName: 'number',
-    description: 'Peer connection timeout in milliseconds.',
+    description: ['Peer connection timeout in milliseconds.'],
     defaultValue: 5000,
   }),
 
   torcontrol: createOption({
     longName: 'tor control',
     typeName: 'string',
-    description: 'Tor control <ip:port> to use if onion listening enabled.',
+    description: ['Tor control <ip:port> to use if onion listening enabled.'],
     defaultValue: '127.0.0.1:9051',
   }),
 
   torpassword: createOption({
     longName: 'tor password',
     typeName: 'string',
-    description: 'Tor control port password.',
+    description: ['Tor control port password.'],
   }),
 
   txconfirmtarget: createOption({
@@ -1097,20 +1081,20 @@ export const BITCOIN_CONFIG_OPTIONS = {
   uacomment: createOption({
     longName: 'user agent comment',
     typeName: 'string[]',
-    description: 'Append a comment to the user agent string.',
+    description: ['Append a comment to the user agent string.'],
   }),
 
   upgradewallet: createOption({
     longName: 'upgrade wallet',
     typeName: 'boolean',
-    description: 'Upgrade wallet to latest format on startup.',
+    description: ['Upgrade wallet to latest format on startup.'],
     defaultValue: true,
   }),
 
   upnp: createOption({
     longName: 'upnp',
     typeName: 'boolean',
-    description: 'Use UPnP to map the listening port.',
+    description: ['Use UPnP to map the listening port.'],
     defaultValue: false,
   }),
 
@@ -1139,14 +1123,14 @@ export const BITCOIN_CONFIG_OPTIONS = {
   walletbroadcast: createOption({
     longName: 'wallet broadcast',
     typeName: 'boolean',
-    description: 'Broadcast transactions created by the wallet.',
+    description: ['Broadcast transactions created by the wallet.'],
     defaultValue: true,
   }),
 
   walletdir: createOption({
     longName: 'wallet directory',
     typeName: 'string',
-    description: 'Specify a non-default location to store wallet data.',
+    description: ['Specify a non-default location to store wallet data.'],
     defaultValue: 'wallets',
   }),
 
@@ -1162,7 +1146,7 @@ export const BITCOIN_CONFIG_OPTIONS = {
   walletrbf: createOption({
     longName: 'wallet replace-by-fee',
     typeName: 'boolean',
-    description: 'Send transactions with full replace-by-fee opt-in enabled.',
+    description: ['Send transactions with full replace-by-fee opt-in enabled.'],
     defaultValue: true,
   }),
 
@@ -1178,8 +1162,9 @@ export const BITCOIN_CONFIG_OPTIONS = {
   whitebind: createOption({
     longName: 'whitelist bind',
     typeName: 'string',
-    description:
+    description: [
       'Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6.',
+    ],
   }),
 
   whitelist: createOption({
@@ -1196,16 +1181,18 @@ export const BITCOIN_CONFIG_OPTIONS = {
   whitelistforcerelay: createOption({
     longName: 'whitelist force relay',
     typeName: 'boolean',
-    description:
+    description: [
       'Force relay of transactions from whitelisted peers even if they violate local relay policy.',
+    ],
     defaultValue: true,
   }),
 
   whitelistrelay: createOption({
     longName: 'whitelist relay',
     typeName: 'boolean',
-    description:
+    description: [
       'Accept relayed transactions received from whitelisted peers even when not relaying transactions.',
+    ],
     defaultValue: true,
   }),
 
@@ -1222,24 +1209,24 @@ export const BITCOIN_CONFIG_OPTIONS = {
   zmqpubhashblock: createOption({
     longName: 'zeromq publish hash block',
     typeName: 'string',
-    description: 'Enable publishing of block hashes to <address>.',
+    description: ['Enable publishing of block hashes to <address>.'],
   }),
 
   zmqpubhashtx: createOption({
     longName: 'zeromq publish hash transaction',
     typeName: 'string',
-    description: 'Enable publishing of transaction hashes to <address>.',
+    description: ['Enable publishing of transaction hashes to <address>.'],
   }),
 
   zmqpubrawblock: createOption({
     longName: 'zeromq publish raw block',
     typeName: 'string',
-    description: 'Enable publishing of raw block hex to <address>.',
+    description: ['Enable publishing of raw block hex to <address>.'],
   }),
 
   zmqpubrawtx: createOption({
     longName: 'zeromq publish raw transaction',
     typeName: 'string',
-    description: 'Enable publishing of raw transaction hex to <address>.',
+    description: ['Enable publishing of raw transaction hex to <address>.'],
   }),
 };

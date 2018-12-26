@@ -1,14 +1,14 @@
-import { writeFileSync } from 'fs';
+import { writeFileSync, existsSync, renameSync } from 'fs';
 import { EOL } from 'os';
 
-import { BitcoinConfig } from './config';
+import { SectionedBitcoinConfig } from './config';
 import { toAbsolute, findOption } from './util';
 import { BITCOIN_CONF_FILENAME } from './default';
 import { Value } from './options';
 import { SECTION_NAMES, TypeName } from './names';
 const pkg = require('../package.json');
 
-const serialize = (optionName: string, optionValue: Value<TypeName>) => {
+const serializeOption = (optionName: string, optionValue: Value<TypeName>) => {
   if (Array.isArray(optionValue)) {
     return optionValue
       .map(optionValueItem => `${optionName}=${optionValueItem}`)
@@ -23,30 +23,19 @@ const serialize = (optionName: string, optionValue: Value<TypeName>) => {
   return `${optionName}=${optionValue}`;
 };
 
-export const writeConfigFiles = (
-  bitcoinConfig: BitcoinConfig,
-  options: { conf?: string; datadir?: string } = {},
-) => {
-  const { conf, datadir } = options;
-  let fileContents = '';
-  const append = (str?: string) => {
-    if (str) {
-      fileContents += str;
-    }
-    fileContents += '\n';
-  };
-  const comment = (x: string | string[]) => {
-    if (typeof x === 'string') {
-      append(`# ${x}`);
-    } else {
-      for (const str of x) {
-        append(`# ${str}`);
-      }
-    }
+const serializeBitcoinConfig = (bitcoinConfig: SectionedBitcoinConfig) => {
+  let serialized = '';
+
+  const addLine = (...lines: string[]) => {
+    serialized += `${EOL}${lines.join(EOL)}`;
   };
 
-  comment(`${new Date()}: This file was written by ${pkg.name}`);
-  append();
+  const addComment = (...comments: string[]) => {
+    addLine(...comments.map(comment => `# ${comment}`));
+  };
+
+  addComment(`${new Date()}: This file was written by ${pkg.name}`);
+  addLine();
 
   for (const sectionName of SECTION_NAMES) {
     const sectionConfig = bitcoinConfig[sectionName];
@@ -54,19 +43,39 @@ export const writeConfigFiles = (
       continue;
     }
     if (sectionName !== 'top') {
-      append(`[${sectionName}]`);
-      append();
+      addLine(`[${sectionName}]`);
+      addLine();
     }
     for (const [optionName, optionValue] of Object.entries(sectionConfig)) {
       const { option } = findOption(optionName);
-      comment(option.description);
+      addComment(...option.description);
       if (optionValue != null) {
-        append(serialize(optionName, optionValue));
-        append();
+        addLine(serializeOption(optionName, optionValue));
+        addLine();
       }
     }
   }
+  return serialized;
+};
 
+const serializeAndWriteOne = (bitcoinConfig: SectionedBitcoinConfig, filePath: string) => {
+  const serialized = serializeBitcoinConfig(bitcoinConfig);
+  const tmpFilePath = `${filePath}.tmp`;
+  const oldFilePath = `${filePath}.old`;
+  writeFileSync(tmpFilePath, serialized);
+  if (existsSync(filePath)) {
+    renameSync(filePath, oldFilePath);
+  }
+  renameSync(tmpFilePath, filePath);
+  return serialized;
+};
+
+export const writeConfigFiles = (
+  bitcoinConfig: SectionedBitcoinConfig,
+  options: { conf?: string; datadir?: string } = {},
+) => {
+  const { conf, datadir } = options;
   const filePath = toAbsolute(conf || BITCOIN_CONF_FILENAME, datadir);
-  writeFileSync(filePath, fileContents);
+  const fileContents = serializeAndWriteOne(bitcoinConfig, filePath);
+  return { filePath, fileContents };
 };

@@ -1,9 +1,9 @@
 import { readFileSync, existsSync } from 'fs';
-import { BITCOIN_CONF_FILENAME, getDefaultBitcoinConfig } from './default';
+import { BITCOIN_CONF_FILENAME, getDefaultSectionedBitcoinConfig } from './default';
 import { parseBitcoinConf } from './parse';
-import { mergeBitcoinConfigs, mergeNetworkIntoTop } from './merge';
+import { mergeBitcoinConfigsWithSections, mergeActiveSectionConfig } from './merge';
 import { toAbsolute } from './util';
-import { BitcoinConfig } from './config';
+import { SectionedBitcoinConfig } from './config';
 import { dirname } from 'path';
 
 const readAndParse = (confPath: string) => {
@@ -19,7 +19,7 @@ type ReadConfigFilesOptions = Partial<{
 
 export const readConfigFiles = (options: ReadConfigFilesOptions = {}) => {
   const { conf, datadir, withDefaults } = options;
-  let bitcoinConfig: BitcoinConfig;
+  let bitcoinConfig: SectionedBitcoinConfig;
   const confPath = toAbsolute(conf || BITCOIN_CONF_FILENAME, datadir);
   try {
     bitcoinConfig = readAndParse(confPath);
@@ -30,18 +30,24 @@ export const readConfigFiles = (options: ReadConfigFilesOptions = {}) => {
       throw ex;
     }
   }
-  const { includeconf } = mergeNetworkIntoTop(bitcoinConfig);
+  const { includeconf } = mergeActiveSectionConfig(bitcoinConfig);
   if (includeconf) {
     for (const includeconfItem of includeconf) {
       const includedConfPath = toAbsolute(includeconfItem, datadir);
       const includedBitcoinConfig = readAndParse(includedConfPath);
-      bitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, includedBitcoinConfig);
+      bitcoinConfig = mergeBitcoinConfigsWithSections(
+        bitcoinConfig,
+        includedBitcoinConfig,
+      );
     }
   }
   if (withDefaults) {
-    bitcoinConfig = mergeBitcoinConfigs(bitcoinConfig, getDefaultBitcoinConfig());
+    bitcoinConfig = mergeBitcoinConfigsWithSections(
+      bitcoinConfig,
+      getDefaultSectionedBitcoinConfig(),
+    );
   }
-  const config = mergeNetworkIntoTop(bitcoinConfig);
+  const config = mergeActiveSectionConfig(bitcoinConfig);
   if (config.includeconf !== includeconf) {
     throw new Error(
       "Included conf files are not allowed to have includeconf's themselves",

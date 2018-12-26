@@ -1,7 +1,7 @@
 import { isAbsolute, join } from 'path';
 import { getDefaultDatadir } from './default';
 import { BITCOIN_CONFIG_OPTIONS, UNKNOWN_OPTION } from './options';
-import { NetworkName } from './names';
+import { SectionName } from './names';
 
 export const toAbsolute = (conf: string, datadir?: string) => {
   if (isAbsolute(conf)) {
@@ -13,7 +13,7 @@ export const toAbsolute = (conf: string, datadir?: string) => {
   return join(datadir || getDefaultDatadir(), conf);
 };
 
-export const findOption = (maybeOptionName: string, networkName?: NetworkName) => {
+export const findOption = (maybeOptionName: string, networkName?: SectionName) => {
   const found = Object.entries(BITCOIN_CONFIG_OPTIONS).find(
     ([optionName]) => optionName === maybeOptionName,
   );

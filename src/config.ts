@@ -2,27 +2,24 @@ import { BITCOIN_CONFIG_OPTIONS, Value } from './options';
 import { SectionName } from './names';
 
 type Options = typeof BITCOIN_CONFIG_OPTIONS;
+type OptionName = keyof Options;
 
-type OptionName<S extends SectionName> = {
-  [OptionName in keyof Options]: (Options)[OptionName]['notAllowedIn'] extends {
-    [T in S]: true
-  }
-    ? never
-    : OptionName
-}[keyof Options];
+export type BitcoinConfig = { [K in OptionName]?: Value<Options[K]['typeName']> };
 
-export type SectionConfig<S extends SectionName> = Partial<
-  { [K in OptionName<S>]: Value<Options[K]['typeName']> }
->;
+type SectionOptionName<T extends SectionName | null> = T extends SectionName
+  ? {
+      [K in OptionName]: (Options)[K]['notAllowedIn'] extends { [K in T]: true }
+        ? never
+        : K
+    }[OptionName]
+  : OptionName;
 
-export interface TopSectionConfig extends SectionConfig<'top'> {}
-export interface MainSectionConfig extends SectionConfig<'main'> {}
-export interface RegtestSectionConfig extends SectionConfig<'regtest'> {}
-export interface TestSectionConfig extends SectionConfig<'test'> {}
+export type SectionConfig<T extends SectionName | null> = {
+  [K in SectionOptionName<T>]?: BitcoinConfig[K]
+};
 
-export interface BitcoinConfig {
-  top?: TopSectionConfig;
-  main?: MainSectionConfig;
-  regtest?: RegtestSectionConfig;
-  test?: TestSectionConfig;
+export type Sections = { [K in SectionName]?: SectionConfig<K> };
+
+export interface SectionedBitcoinConfig extends BitcoinConfig {
+  sections?: Sections;
 }

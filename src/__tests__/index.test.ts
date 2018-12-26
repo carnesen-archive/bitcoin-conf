@@ -2,7 +2,7 @@ import { BitcoinConfig, readConfigFiles, writeConfigFiles } from '..';
 import { isAbsolute, dirname, basename, join } from 'path';
 import tempWrite = require('temp-write');
 import * as tempy from 'tempy';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 
 // throws-invalid-option-name.conf
 describe('readConfigFiles', () => {
@@ -56,6 +56,11 @@ describe('readConfigFiles', () => {
     // because the static type of "config" doesn't know about "foo".
     // The following would be a type error:
     //   expect(config.foo).toBe('bar');
+  });
+
+  it('ignores spaces around keys', () => {
+    const config = readConfigFiles({ conf: tempWrite.sync('rpcuser  =  foo') });
+    expect(config.rpcuser === 'foo').toEqual(true);
   });
 
   it('attaches a value of a "string" option as a string', () => {
@@ -187,83 +192,83 @@ describe('readConfigFiles', () => {
   });
 
   it('throws "Parse error" with the line number and line text if a line is bad', () => {
-    expect(() => {
+    expect(() =>
       readConfigFiles({
         conf: tempWrite.sync('\n\n foo bar baz'),
-      });
-    }).toThrow(/Parse error:.*line 3:  foo bar baz/);
+      }),
+    ).toThrow(/Parse error:.*line 3:  foo bar baz/);
   });
 
   it('throws "regtest and testnet" error if both are set to true', () => {
-    expect(() => {
+    expect(() =>
       readConfigFiles({
         conf: tempWrite.sync('regtest=1 \n testnet=1'),
-      });
-    }).toThrow('regtest and testnet');
+      }),
+    ).toThrow('regtest and testnet');
   });
 
   it('throws "Expected...main,regtest,test" if it contains a bad section name', () => {
-    expect(() => {
+    expect(() =>
       readConfigFiles({
         conf: tempWrite.sync('[foo]'),
-      });
-    }).toThrow(/Expected.*main,regtest,test/);
+      }),
+    ).toThrow(/Expected.*main,regtest,test/);
   });
 
   it('throws "empty option name" if a line has an empty option name', () => {
-    expect(() => {
+    expect(() =>
       readConfigFiles({
         conf: tempWrite.sync('=foo'),
-      });
-    }).toThrow('Empty option name');
+      }),
+    ).toThrow('Empty option name');
   });
 
   it('throws "not allowed to have includeconf" if an included conf has an includeconf', () => {
     const includedFilePath = tempWrite.sync('includeconf=anything.conf');
     const entryFilePath = tempWrite.sync(`includeconf=${includedFilePath}`);
-    expect(() => {
-      readConfigFiles({ conf: entryFilePath });
-    }).toThrow('not allowed to have includeconf');
+    expect(() => readConfigFiles({ conf: entryFilePath })).toThrow(
+      'not allowed to have includeconf',
+    );
   });
 
   it('throws "not allowed" if an option appears in a section in which it is not allowed', () => {
-    expect(() => {
+    expect(() =>
       readConfigFiles({
         conf: tempWrite.sync('[main] \n vbparams=foo'),
-      });
-    }).toThrow('not allowed');
+      }),
+    ).toThrow('not allowed');
   });
 
   it('throws "must be absolute" if passed datadir is not absolute', () => {
-    expect(() => {
+    expect(() =>
       readConfigFiles({
         datadir: 'foo',
-      });
-    }).toThrow('must be absolute');
+      }),
+    ).toThrow('must be absolute');
   });
 
   it('throws "only allowed in top" if an option uses dot notation in a network section', () => {
-    expect(() => {
+    expect(() =>
       readConfigFiles({
         conf: tempWrite.sync('[main] \n test.rpcuser=don'),
-      });
-    }).toThrow('only allowed in top');
+      }),
+    ).toThrow('only allowed in top');
   });
 
   it('throws "rpcpassword option ... comments" if rpcpassword line has a comment', () => {
-    expect(() => {
+    expect(() =>
       readConfigFiles({
         conf: tempWrite.sync('rpcpassword=foo # comment is not allowed on this line'),
-      });
-    }).toThrow(/rpcpassword option.*comments/);
+      }),
+    ).toThrow(/rpcpassword option.*comments/);
   });
 
   it('throws ENOENT if conf is passed but does not exist', () => {
-    expect(() => {
+    expect(() =>
       readConfigFiles({
-        conf: '/foo/bar/baz',
-      });
-    }).toThrow('ENOENT');
+        conf: tempy.file(),
+      }),
+    ).toThrow('ENOENT');
   });
 });
 
@@ -271,7 +276,44 @@ describe('writeConfigFiles', () => {
   it('writes bitcoin.conf in the specified datadir', () => {
     const datadir = tempy.directory();
     writeConfigFiles({}, { datadir });
-    const contents = readFileSync(join(datadir, 'bitcoin.conf'), 'utf8');
-    expect(contents).toMatch(/.*/);
+    expect(existsSync(join(datadir, 'bitcoin.conf'))).toBe(true);
+  });
+
+  it('writes file to "conf" if that option is provided as an absolute path', () => {
+    const conf = tempy.file();
+    writeConfigFiles({}, { conf });
+    expect(existsSync(conf)).toBe(true);
+  });
+
+  it('ignores datadir if conf is provided as an absolute path', () => {
+    const conf = tempy.file();
+    expect(isAbsolute(conf)).toBe(true);
+    const datadir = 'this value is completely ignored if conf is absolute';
+    writeConfigFiles({}, { conf, datadir });
+    expect(existsSync(conf)).toBe(true);
+  });
+
+  it('interprets "conf" as datadir-relative if it is not an absolute path', () => {
+    const datadir = tempy.directory();
+    const conf = 'non-standard-filename.conf';
+    writeConfigFiles({}, { datadir, conf });
+    expect(existsSync(join(datadir, conf))).toBe(true);
+  });
+
+  it('throws "ENOENT" if specified datadir does not exist', () => {
+    const datadir = tempy.file();
+    // ^^ tempy.file() is basically just tempy.directory() without the mkdir
+    expect(() => writeConfigFiles({}, { datadir })).toThrow('ENOENT');
+  });
+
+  it('throws "ENOENT" if conf is provided in a directory that does not already exist', () => {
+    const conf = join(tempy.file(), 'some-filename.conf');
+    // ^^ tempy.file() is basically just tempy.directory() without the mkdir
+    expect(() => writeConfigFiles({}, { datadir: conf })).toThrow('ENOENT');
+  });
+
+  it('creates a backup of an existing file first if one exists', () => {
+    const conf = tempy.file();
+    writeConfigFiles({}, { conf });
   });
 });

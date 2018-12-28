@@ -1,9 +1,9 @@
 import { isAbsolute, join } from 'path';
 import { getDefaultDatadir } from './default';
-import { BITCOIN_CONFIG_OPTIONS, UNKNOWN_OPTION } from './options';
+import { BITCOIN_CONFIG_OPTIONS, UNKNOWN_OPTION, NotAllowedIn } from './options';
 import { SectionName } from './names';
 
-export const toAbsolute = (conf: string, datadir?: string) => {
+export function toAbsolute(conf: string, datadir?: string) {
   if (isAbsolute(conf)) {
     return conf;
   }
@@ -11,9 +11,9 @@ export const toAbsolute = (conf: string, datadir?: string) => {
     throw new Error('Path "datadir" must be absolute');
   }
   return join(datadir || getDefaultDatadir(), conf);
-};
+}
 
-export const findOption = (maybeOptionName: string, networkName?: SectionName) => {
+export function findOption(maybeOptionName: string, sectionName?: SectionName) {
   const found = Object.entries(BITCOIN_CONFIG_OPTIONS).find(
     ([optionName]) => optionName === maybeOptionName,
   );
@@ -25,11 +25,15 @@ export const findOption = (maybeOptionName: string, networkName?: SectionName) =
   }
   const optionName = maybeOptionName as keyof typeof BITCOIN_CONFIG_OPTIONS;
   const [, option] = found;
-  if (networkName && (option.notAllowedIn as any)[networkName]) {
-    throw new Error(`Option "${optionName}" is not allowed for network "${networkName}"`);
+  if (
+    sectionName &&
+    option.notAllowedIn &&
+    (option.notAllowedIn as NotAllowedIn)[sectionName]
+  ) {
+    throw new Error(`Option "${optionName}" is not allowed in section "${sectionName}"`);
   }
   return {
     optionName,
     option,
   };
-};
+}

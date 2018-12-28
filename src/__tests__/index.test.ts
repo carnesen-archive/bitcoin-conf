@@ -192,11 +192,11 @@ describe('readConfigFiles', () => {
   });
 
   it('throws "Parse error" with the line number and line text if a line is bad', () => {
-    expect(() =>
+    expect(() => {
       readConfigFiles({
         conf: tempWrite.sync('\n\n foo bar baz'),
-      }),
-    ).toThrow(/Parse error:.*line 3:  foo bar baz/);
+      });
+    }).toThrow(/Parse error:.*line 3:  foo bar baz/);
   });
 
   it('throws "regtest and testnet" error if both are set to true', () => {
@@ -314,6 +314,37 @@ describe('writeConfigFiles', () => {
 
   it('creates a backup of an existing file first if one exists', () => {
     const conf = tempy.file();
-    writeConfigFiles({}, { conf });
+    writeConfigFiles({ rpcuser: 'foo' }, { conf });
+    const fileContents = readFileSync(conf, 'utf8');
+    writeConfigFiles({ rpcuser: 'bar' }, { conf });
+    const backupFileContents = readFileSync(`${conf}.bak`, 'utf8');
+    expect(fileContents).toBe(backupFileContents);
+  });
+
+  it('returns an array of the file paths and contents that were written', () => {
+    const filePath = tempy.file();
+    const returnValue = writeConfigFiles({ rpcuser: 'foo' }, { conf: filePath });
+    const fileContents = readFileSync(filePath, 'utf8');
+    expect(returnValue).toEqual([{ filePath, fileContents }]);
+  });
+
+  it('writes a header comment line', () => {
+    const [{ fileContents }] = writeConfigFiles({}, { conf: tempy.file() });
+    expect(fileContents).toMatch(/^# .* written by/);
+  });
+
+  it('writes string option as name=value', () => {
+    const [{ fileContents }] = writeConfigFiles(
+      { rpcuser: 'sinh' },
+      { conf: tempy.file() },
+    );
+    expect(fileContents).toMatch(/^rpcuser=sinh$/m);
+  });
+  it('writes multi-valued string option as multiple name=value pairs', () => {
+    const [{ fileContents }] = writeConfigFiles(
+      { rpcauth: ['foo', 'bar'] },
+      { conf: tempy.file() },
+    );
+    expect(fileContents).toMatch(/^rpcauth=foo\n\r?rpcauth=bar$/m);
   });
 });

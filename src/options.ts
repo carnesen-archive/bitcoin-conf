@@ -6,7 +6,7 @@ export type Value<T extends TypeName> = T extends 'string'
     ? boolean
     : T extends 'number' ? number : T extends 'string[]' ? string[] : never;
 
-type NotAllowedIn = { [K in SectionName]?: true };
+export type NotAllowedIn = { [K in SectionName]?: true };
 
 type DefaultValue<T extends TypeName> = Value<T> | { [K in SectionName]: Value<T> };
 

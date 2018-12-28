@@ -6,15 +6,11 @@ type OptionName = keyof Options;
 
 export type BitcoinConfig = { [K in OptionName]?: Value<Options[K]['typeName']> };
 
-type SectionOptionName<T extends SectionName | null> = T extends SectionName
-  ? {
-      [K in OptionName]: (Options)[K]['notAllowedIn'] extends { [K in T]: true }
-        ? never
-        : K
-    }[OptionName]
-  : OptionName;
+type SectionOptionName<T extends SectionName> = {
+  [K in OptionName]: (Options)[K]['notAllowedIn'] extends { [K in T]: true } ? never : K
+}[OptionName];
 
-export type SectionConfig<T extends SectionName | null> = {
+type SectionConfig<T extends SectionName> = {
   [K in SectionOptionName<T>]?: BitcoinConfig[K]
 };
 

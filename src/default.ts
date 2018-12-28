@@ -1,12 +1,12 @@
 import { join } from 'path';
 import { platform, homedir } from 'os';
-import { SectionedBitcoinConfig } from './config';
+import { SectionedBitcoinConfig, Sections, BitcoinConfig } from './config';
 import { BITCOIN_CONFIG_OPTIONS } from './options';
 import { SECTION_NAMES } from './names';
 
 export const BITCOIN_CONF_FILENAME = 'bitcoin.conf';
 
-export const getDefaultDatadir = (p = platform()) => {
+export function getDefaultDatadir(p = platform()) {
   switch (p) {
     case 'darwin':
       return join(homedir(), 'Library', 'Application Support', 'Bitcoin');
@@ -15,28 +15,28 @@ export const getDefaultDatadir = (p = platform()) => {
     default:
       return join(homedir(), '.bitcoin');
   }
-};
+}
 
 type OptionName = keyof typeof BITCOIN_CONFIG_OPTIONS;
 
-export const getDefaultSectionedBitcoinConfig = (p = platform()) => {
-  const sectionedBitcoinConfig: SectionedBitcoinConfig = {
+export function getDefaults(p = platform()) {
+  const bitcoinConfig: BitcoinConfig = {
     datadir: getDefaultDatadir(p),
-    sections: {
-      main: {},
-      regtest: {},
-      test: {},
-    },
+  };
+  const sections: Required<Sections> = {
+    main: {},
+    regtest: {},
+    test: {},
   };
   for (const [optionName, option] of Object.entries(BITCOIN_CONFIG_OPTIONS)) {
     const { defaultValue } = option;
     if (typeof defaultValue === 'object' && !Array.isArray(defaultValue)) {
-      SECTION_NAMES.forEach(sectionName => {
-        sectionedBitcoinConfig.sections![sectionName]![optionName as OptionName];
-      });
+      for (const sectionName of SECTION_NAMES) {
+        sections[sectionName][optionName as OptionName] = defaultValue[sectionName];
+      }
     } else {
-      sectionedBitcoinConfig[optionName as OptionName] = defaultValue;
+      bitcoinConfig[optionName as OptionName] = defaultValue;
     }
   }
-  return sectionedBitcoinConfig;
-};
+  return { ...bitcoinConfig, sections };
+}

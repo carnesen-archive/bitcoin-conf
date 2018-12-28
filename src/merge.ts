@@ -1,46 +1,47 @@
-import { SectionedBitcoinConfig, SectionConfig, BitcoinConfig, Sections } from './config';
+import { SectionedBitcoinConfig, BitcoinConfig, Sections } from './config';
 import { SECTION_NAMES, SectionName } from './names';
 import { BITCOIN_CONFIG_OPTIONS } from './options';
+
 // Options with value undefined are not copied into the merged config.
 // Options with array values are merged together with config0 values coming first.
-const mergeSectionConfigs = <
-  S0 extends SectionName | null,
-  S1 extends SectionName | null
->(
-  config0: SectionConfig<S0>,
-  config1: SectionConfig<S1>,
-) => {
-  const mergedConfig: SectionConfig<S0 | S1> = {};
-  const optionNames0 = Object.keys(config0);
-  const optionNames1 = Object.keys(config1);
+function mergeBitcoinConfigs(
+  bitcoinConfig0: BitcoinConfig,
+  bitcoinConfig1: BitcoinConfig,
+) {
+  const mergedBitcoinConfig: BitcoinConfig = {};
+  const optionNames0 = Object.keys(bitcoinConfig0);
+  const optionNames1 = Object.keys(bitcoinConfig1);
   const uniqueOptionNames = new Set([...optionNames0, ...optionNames1]);
   for (const optionName of uniqueOptionNames) {
-    const value0 = config0[optionName as keyof typeof config0];
-    const value1 = config1[optionName as keyof typeof config1];
+    const value0 = bitcoinConfig0[optionName as keyof typeof bitcoinConfig0];
+    const value1 = bitcoinConfig1[optionName as keyof typeof bitcoinConfig1];
     if (typeof value0 !== 'undefined') {
       if (Array.isArray(value0) && Array.isArray(value1)) {
-        mergedConfig[optionName as keyof typeof mergedConfig] = [...value0, ...value1];
+        mergedBitcoinConfig[optionName as keyof typeof mergedBitcoinConfig] = [
+          ...value0,
+          ...value1,
+        ];
         continue;
       }
-      mergedConfig[optionName as keyof typeof mergedConfig] = value0;
+      mergedBitcoinConfig[optionName as keyof typeof mergedBitcoinConfig] = value0;
       continue;
     }
     if (typeof value1 !== 'undefined') {
-      mergedConfig[optionName as keyof typeof mergedConfig] = value1;
+      mergedBitcoinConfig[optionName as keyof typeof mergedBitcoinConfig] = value1;
     }
   }
-  return mergedConfig;
-};
+  return mergedBitcoinConfig;
+}
 
-const mergeSectionedBitcoinConfigs = (
+export function mergeSectionedBitcoinConfigs(
   sectionedBitcoinConfig0: SectionedBitcoinConfig,
   sectionedBitcoinConfig1: SectionedBitcoinConfig,
-) => {
-  const { sections: sections0, ...rest0 } = sectionedBitcoinConfig0;
-  const { sections: sections1, ...rest1 } = sectionedBitcoinConfig1;
-  const mergedSectionedBitcoinConfig: SectionedBitcoinConfig = mergeSectionConfigs(
-    rest0,
-    rest1,
+) {
+  const { sections: sections0, ...bitcoinConfig0 } = sectionedBitcoinConfig0;
+  const { sections: sections1, ...bitcoinConfig1 } = sectionedBitcoinConfig1;
+  const mergedSectionedBitcoinConfig: SectionedBitcoinConfig = mergeBitcoinConfigs(
+    bitcoinConfig0,
+    bitcoinConfig1,
   );
   if (sections0 && sections1) {
     const mergedSections: Sections = {};
@@ -48,7 +49,7 @@ const mergeSectionedBitcoinConfigs = (
       const sectionConfig0 = sections0[sectionName];
       const sectionConfig1 = sections1[sectionName];
       if (sectionConfig0 && sectionConfig1) {
-        mergedSections[sectionName] = mergeSectionConfigs(sectionConfig0, sectionConfig1);
+        mergedSections[sectionName] = mergeBitcoinConfigs(sectionConfig0, sectionConfig1);
         continue;
       }
       if (sectionConfig0 || sectionConfig1) {
@@ -60,9 +61,9 @@ const mergeSectionedBitcoinConfigs = (
     mergedSectionedBitcoinConfig.sections = sections0 || sections1;
   }
   return mergedSectionedBitcoinConfig;
-};
+}
 
-const getActiveSectionName = (bitcoinConfig: BitcoinConfig): SectionName => {
+function getActiveSectionName(bitcoinConfig: BitcoinConfig): SectionName {
   const { regtest, testnet } = bitcoinConfig;
   if (regtest && testnet) {
     throw new Error('regtest and testnet cannot both be set to true');
@@ -74,11 +75,11 @@ const getActiveSectionName = (bitcoinConfig: BitcoinConfig): SectionName => {
     return 'test';
   }
   return 'main';
-};
+}
 
-export const mergeUpActiveSectionConfig = (
+export function mergeUpActiveSectionConfig(
   sectionedBitcoinConfig: SectionedBitcoinConfig,
-): BitcoinConfig => {
+): BitcoinConfig {
   const activeSectionName = getActiveSectionName(sectionedBitcoinConfig);
   const { sections, ...rest } = sectionedBitcoinConfig;
   if (activeSectionName !== 'main') {
@@ -95,5 +96,5 @@ export const mergeUpActiveSectionConfig = (
   if (!sectionConfig) {
     return rest;
   }
-  return mergeSectionConfigs(rest, sectionConfig);
-};
+  return mergeBitcoinConfigs(rest, sectionConfig);
+}

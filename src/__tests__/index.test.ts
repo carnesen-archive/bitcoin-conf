@@ -5,6 +5,8 @@ import {
   SectionedBitcoinConfig,
 } from '..';
 import * as tempy from 'tempy';
+import { getDefaults } from '../default';
+import { mergeUpActiveSectionConfig } from '../merge';
 
 describe('index', () => {
   it('exports the function named `readConfigFiles`', () => {
@@ -35,5 +37,13 @@ describe('index', () => {
     writeConfigFiles(expectedBitcoinConfig, { conf });
     const bitcoinConfig = readConfigFiles({ conf });
     expect(bitcoinConfig).toEqual(expectedBitcoinConfig);
+  });
+
+  it('behaves sanely with respect to defaults', () => {
+    const defaults = getDefaults();
+    const conf = tempy.file();
+    writeConfigFiles(defaults, { conf });
+    const bitcoinConfig = readConfigFiles({ conf });
+    expect(mergeUpActiveSectionConfig(defaults)).toEqual(bitcoinConfig);
   });
 });

@@ -19,25 +19,32 @@ describe('readConfigFiles', () => {
   it('reads bitcoin.conf in the specified datadir', () => {
     const filePath = tempWrite.sync('rpcuser=chris', 'bitcoin.conf');
     const datadir = dirname(filePath);
-    expect(readConfigFiles({ datadir })).toEqual({ rpcuser: 'chris' });
+    expect(readConfigFiles({ datadir }).rpcuser).toEqual('chris');
   });
 
-  it('returns an empty object if specified datadir has no bitcoin.conf', () => {
-    expect(readConfigFiles({ datadir: __dirname })).toEqual({});
+  it('preferentially attaches the provided datadir value to the result', () => {
+    const filePath = tempWrite.sync('datadir=chris', 'bitcoin.conf');
+    const datadir = dirname(filePath);
+    expect(readConfigFiles({ datadir })).toEqual({ datadir });
+  });
+
+  it('returns an otherwise empty object if specified datadir has no bitcoin.conf', () => {
+    const datadir = tempy.directory();
+    expect(readConfigFiles({ datadir })).toEqual({ datadir });
   });
 
   it('interprets non-absolute "conf" as relative to datadir', () => {
     const filePath = tempWrite.sync('rpcuser=carl');
     expect(
-      readConfigFiles({ datadir: dirname(filePath), conf: basename(filePath) }),
-    ).toEqual({ rpcuser: 'carl' });
+      readConfigFiles({ datadir: dirname(filePath), conf: basename(filePath) }).rpcuser,
+    ).toEqual('carl');
   });
 
-  it('ignores datadir and just reads "conf" if it\'s an absolute path', () => {
+  it('reads "conf" if it\'s an absolute path, regardless of datadir value', () => {
     const filePath = tempWrite.sync('rpcuser=susan');
-    const datadir = 'this value is ignored if conf is absolute';
+    const datadir = 'this value is not checked in any way if conf is absolute';
     expect(isAbsolute(filePath)).toBe(true);
-    expect(readConfigFiles({ datadir, conf: filePath })).toEqual({ rpcuser: 'susan' });
+    expect(readConfigFiles({ datadir, conf: filePath }).rpcuser).toEqual('susan');
   });
 
   it('reads and merges in all "includeconf" files', () => {
@@ -86,9 +93,9 @@ describe('readConfigFiles', () => {
     expect(config).toEqual({ blocksonly: false });
   });
 
-  it('attaches an undefined value of a "boolean" option as false', () => {
+  it('attaches an undefined value of a "boolean" option as undefined', () => {
     const config = readConfigFiles({ conf: tempWrite.sync('blocksonly=') });
-    expect(config).toEqual({ blocksonly: false });
+    expect(config).toEqual({ blocksonly: undefined });
   });
 
   it('attaches a truthy value that\'s not "1" of a "boolean" option as false', () => {

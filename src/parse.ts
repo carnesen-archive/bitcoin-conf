@@ -4,6 +4,9 @@ import { castToSectionName, TypeName, SectionName } from './names';
 import { mergeSectionedBitcoinConfigs } from './merge';
 
 function castToValue(typeName: TypeName, str: string) {
+  if (str.length === 0) {
+    return undefined;
+  }
   switch (typeName) {
     case 'string': {
       return str;

@@ -2,7 +2,7 @@ import { SectionedBitcoinConfig, BitcoinConfig, Sections } from './config';
 import { SECTION_NAMES, SectionName } from './names';
 import { BITCOIN_CONFIG_OPTIONS } from './options';
 
-// Options with value undefined are not copied into the merged config.
+// Options with value undefined are copied into the merged config.
 // Options with array values are merged together with config0 values coming first.
 function mergeBitcoinConfigs(
   bitcoinConfig0: BitcoinConfig,
@@ -28,7 +28,9 @@ function mergeBitcoinConfigs(
     }
     if (typeof value1 !== 'undefined') {
       mergedBitcoinConfig[optionName as keyof typeof mergedBitcoinConfig] = value1;
+      continue;
     }
+    mergedBitcoinConfig[optionName as keyof typeof mergedBitcoinConfig] = undefined;
   }
   return mergedBitcoinConfig;
 }

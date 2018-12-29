@@ -51,5 +51,8 @@ export function readConfigFiles(options: ReadConfigFilesOptions = {}) {
       "Included conf files are not allowed to have includeconf's themselves",
     );
   }
+  if (datadir) {
+    config.datadir = datadir;
+  }
   return config;
 }

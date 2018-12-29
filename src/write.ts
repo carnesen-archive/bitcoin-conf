@@ -8,7 +8,10 @@ import { Value } from './options';
 import { SECTION_NAMES, TypeName } from './names';
 const pkg = require('../package.json');
 
-function serializeOption(optionName: string, optionValue: Value<TypeName>) {
+function serializeOption(optionName: string, optionValue?: Value<TypeName>) {
+  if (typeof optionValue === 'undefined') {
+    return `${optionName}=`;
+  }
   if (Array.isArray(optionValue)) {
     return optionValue
       .map(optionValueItem => `${optionName}=${optionValueItem}`)
@@ -29,10 +32,8 @@ function serializeBitcoinConfig(bitcoinConfig: BitcoinConfig) {
   for (const [optionName, optionValue] of Object.entries(bitcoinConfig)) {
     const { option } = findOption(optionName);
     strings.push(...option.description.map(item => `# ${item}`));
-    if (optionValue != null) {
-      strings.push(serializeOption(optionName, optionValue));
-      strings.push('');
-    }
+    strings.push(serializeOption(optionName, optionValue));
+    strings.push('');
   }
   return strings.join(EOL);
 }

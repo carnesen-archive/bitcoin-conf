@@ -19,10 +19,8 @@ export function getDefaultDatadir(p = platform()) {
 
 type OptionName = keyof typeof BITCOIN_CONFIG_OPTIONS;
 
-export function getDefaults(p = platform()) {
-  const bitcoinConfig: BitcoinConfig = {
-    datadir: getDefaultDatadir(p),
-  };
+export function getDefaults(p = platform()): SectionedBitcoinConfig {
+  const bitcoinConfig: BitcoinConfig = {};
   const sections: Required<Sections> = {
     main: {},
     regtest: {},
@@ -38,5 +36,6 @@ export function getDefaults(p = platform()) {
       bitcoinConfig[optionName as OptionName] = defaultValue;
     }
   }
+  bitcoinConfig.datadir = getDefaultDatadir(p);
   return { ...bitcoinConfig, sections };
 }

@@ -246,8 +246,10 @@ export const BITCOIN_CONFIG_OPTIONS = {
   datadir: createOption({
     longName: 'data directory',
     typeName: 'string',
-    description: ['Specify a non-default location to store blockchain and other data.'],
-    defaultValue: 'platform-dependent',
+    description: [
+      'Specify a non-default location to store blockchain and other data.',
+      'Default value is platform-dependent.',
+    ],
   }),
 
   dbbatchsize: createOption({

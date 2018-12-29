@@ -14,6 +14,10 @@ export function toAbsolute(conf: string, datadir?: string) {
 }
 
 export function findOption(maybeOptionName: string, sectionName?: SectionName) {
+  const alphanumericOrHyphenRegExp = /[^\w\-]/gi;
+  if (maybeOptionName.replace(alphanumericOrHyphenRegExp, '') !== maybeOptionName) {
+    throw new Error(`Invalid option name "${maybeOptionName}"`);
+  }
   const found = Object.entries(BITCOIN_CONFIG_OPTIONS).find(
     ([optionName]) => optionName === maybeOptionName,
   );

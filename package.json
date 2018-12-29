@@ -1,0 +1,15 @@
+{
+  "name": "@carnesen/bitcoin-conf",
+  "version": "0.0.2",
+  "description": "Moved to https://github.com/carnesen/bitcoin-config",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carnesen/bitcoin-conf.git"
+  },
+  "author": "Chris Arnesen",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/carnesen/bitcoin-conf/issues"
+  },
+  "homepage": "https://github.com/carnesen/bitcoin-conf#readme"
+}
